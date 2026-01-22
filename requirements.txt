@@ -1,0 +1,18 @@
+# Core framework
+react
+react-dom
+
+# Build tool
+vite
+
+# Routing
+react-router-dom
+
+# Development tooling
+@vitejs/plugin-react-swc
+eslint
+
+# Styling (optional – include only if you use it)
+tailwindcss
+postcss
+autoprefixer
