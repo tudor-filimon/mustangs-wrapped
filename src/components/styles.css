@@ -1,0 +1,170 @@
+/* 1. FONTS */
+@import url('https://fonts.googleapis.com/css2?family=Jersey+25&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+/* 2. BASICS */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; overflow: hidden; }
+
+/* 3. HOME CONTAINER & THEMES */
+.home-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: backgro   und 0.3s ease;
+}
+
+/* --- DARK MODE (Default) --- */
+/* Gradient downwards: Top (Lighter Purple) -> Bottom (Dark Deep Purple) */
+.home-container.dark {
+  background: linear-gradient(180deg, #5b3085 0%, #2a1b4e 100%);
+  color: white;
+}
+
+/* --- LIGHT MODE --- */
+/* Gradient downwards: Top (Lavender) -> Bottom (Whiteish) */
+.home-container.light {
+  background: linear-gradient(180deg, #9F7AEA 0%, #E8DEF8 100%);
+  color: white; /* Text stays white in light mode per your screenshot */
+}
+
+/* 4. HEADER */
+.header {
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+}
+
+.search-bar {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 320px;
+  backdrop-filter: blur(5px);
+}
+.search-bar input { background: transparent; border: none; color: white; outline: none; width: 100%; }
+.search-bar input::placeholder { color: rgba(255,255,255,0.7); }
+
+.header-right { display: flex; gap: 12px; }
+.circle-icon {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 0.9rem;
+  background: white; color: black; 
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+/* Icon Colors */
+.circle-icon.wfn { background: #E8DEF8; color: #5b3085; }
+.circle-icon.red { background: #FF2E54; color: white; }
+.circle-icon.dark { background: #4a2c7a; color: white; }
+.circle-icon.green { background: #1ED760; color: white; }
+
+
+/* 5. LAYOUT (ORBITAL SYSTEM) */
+.main-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 80px;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.top-row { margin-bottom: 20px; gap: 40px; }
+.bottom-row { margin-top: 20px; gap: 40px; }
+
+/* Straight Line Middle Row */
+.middle-row {
+  display: flex;
+  flex-direction: row; 
+  align-items: center; 
+  justify-content: center; 
+  flex-wrap: nowrap; 
+  gap: 20px;
+  width: 100%;
+}
+
+/* 6. CENTRAL TITLE (Mustang Wrapped) */
+.central-title {
+  font-family: "Jersey 25", sans-serif;
+  font-size: 85px; 
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap; 
+  color: white;
+  /* Strong Block Shadow */
+  text-shadow: 4px 4px 0px #2e1052, 0 0 20px rgba(138, 56, 245, 0.4);
+}
+
+/* 7. BUTTONS */
+.pill-btn {
+  border: none;
+  border-radius: 60px;
+  padding: 20px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  white-space: nowrap; 
+  transition: transform 0.2s, background-color 0.2s;
+}
+.pill-btn:hover { transform: translateY(-3px); }
+.side-btn { padding: 25px 50px; }
+
+/* --- BUTTON THEMES --- */
+
+/* Dark Mode Buttons (Purple) */
+.home-container.dark .pill-btn {
+  background-color: #552d87; /* Deep Purple */
+  color: white;
+}
+.home-container.dark .pill-btn:hover { background-color: #6a3da0; }
+
+/* Light Mode Buttons (White) */
+.home-container.light .pill-btn {
+  background-color: #ffffff; /* White */
+  color: #4a2c7a; /* Dark Text */
+}
+.home-container.light .pill-btn:hover { background-color: #f0f0f0; }
+
+
+/* 8. FOOTER */
+.now-playing {
+  position: absolute; bottom: 0; width: 100%; height: 80px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 40px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+}
+
+/* Footer Theme Logic */
+.home-container.dark .now-playing { background: rgba(46, 16, 82, 0.4); }
+.home-container.light .now-playing { background: rgba(255, 255, 255, 0.3); }
+
+.np-left { font-weight: 700; opacity: 0.9; }
+.visualizer-container { display: flex; gap: 6px; align-items: center; height: 30px; }
+.bar { width: 6px; background: white; border-radius: 4px; animation: bounce 1.2s infinite ease-in-out; }
+.bar:nth-child(1) { height: 15px; animation-delay: 0s; }
+.bar:nth-child(2) { height: 25px; animation-delay: 0.1s; }
+.bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+.bar:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+.bar:nth-child(5) { height: 12px; animation-delay: 0.4s; }
+@keyframes bounce { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.8); } }
+
+.np-right { display: flex; align-items: center; gap: 15px; font-weight: 600; }
+.album-art { width: 56px; height: 56px; background: #d4a574; border-radius: 4px; }
