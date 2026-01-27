@@ -1,35 +1,35 @@
-/* 1. FONTS */
+/* Google Fonts Import  */
 @import url('https://fonts.googleapis.com/css2?family=Jersey+25&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
-/* 2. BASICS */
+/* These styling rules apply to all the container and acts like an overlapping rules */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
-/* 3. HOME CONTAINER & THEMES */
+/* for the component thats the home */
 .home-container {
   width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  transition: backgro   und 0.3s ease;
+  transition: background 0.3s ease;
 }
 
-/* --- DARK MODE (Default) --- */
-/* Gradient downwards: Top (Lighter Purple) -> Bottom (Dark Deep Purple) */
+/* subset mode for dark mode, set as a different mode of the same home container(think the way hover works) */
 .home-container.dark {
   background: linear-gradient(180deg, #5b3085 0%, #2a1b4e 100%);
   color: white;
 }
 
-/* --- LIGHT MODE --- */
-/* Gradient downwards: Top (Lavender) -> Bottom (Whiteish) */
+/* subset mode for light mode, set as a different mode of the home container as well */
 .home-container.light {
   background: linear-gradient(180deg, #9F7AEA 0%, #E8DEF8 100%);
-  color: white; /* Text stays white in light mode per your screenshot */
+  color: #5b3085; 
 }
 
-/* 4. HEADER */
+/* Styling for all the header components (Text for username, buttons, and various different icons for spotify, WFN, apple logo, etc) 
+   Also includes styling for the dark/light buttons
+*/
 .header {
   height: 80px;
   display: flex;
@@ -38,32 +38,79 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   padding: 0 30px;
 }
 
+/* Search bar styling, just simple styling to make rounded and give a bit of dynamic sense with a backdrop filter */
 .search-bar {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(151, 53, 216, 0.2);
   border-radius: 30px;
   padding: 10px 20px;
   display: flex;
   align-items: center;
   gap: 10px;
   width: 320px;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(25px);
 }
+/* For the input line thingy, done with GEMINI */
 .search-bar input { background: transparent; border: none; color: white; outline: none; width: 100%; }
+
+/* for the text that is there before any input */
 .search-bar input::placeholder { color: rgba(255,255,255,0.7); }
 
+/*Edits the gap between each of the icons in the top right corner*/
 .header-right { display: flex; gap: 12px; }
+
+
+/* rules for the 3 icons; spotify, western, and WFN
+  KEEPS HOW THEY look very consistent
+*/
 .circle-icon {
-  width: 42px; height: 42px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-weight: bold; font-size: 0.9rem;
-  background: white; color: black; 
+  background: white; color: black;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 50px;
+  height: 50px;
+/* Makes container circular like logo */
+  border-radius: 50%;
+  overflow: hidden; 
 }
-/* Icon Colors */
-.circle-icon.wfn { background: #E8DEF8; color: #5b3085; }
-.circle-icon.red { background: #FF2E54; color: white; }
-.circle-icon.dark { background: #4a2c7a; color: white; }
-.circle-icon.green { background: #1ED760; color: white; }
+
+/* forces the actual image inside the div to fit that mold */
+.circle-icon img {
+  width: 100%;      
+  height: 100%;     
+  object-fit: cover; 
+}
+
+
+/*  Hover rules for all 3 of the circle icon buttons */
+.circle-icon:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); 
+}
+
+
+/* Container for the WFN logo in top right. Size can be played with and if color interferes can be removed */
+.circle-icon.wfn { 
+  background: #ffffff; 
+  color: #5b3085; 
+}
+
+
+
+/*  Container for the Mustangs Logo in the top right.changes the background colors */
+.circle-icon.mustangs { 
+  background: #E8DEF8; 
+  color: #5b3085; 
+}
+
+/* Container for the Spotify Logo in the top right.changes the background colors*/
+.circle-icon.spotify { 
+  background: #e8def800; 
+}
+
+
 
 
 /* 5. LAYOUT (ORBITAL SYSTEM) */

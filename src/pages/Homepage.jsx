@@ -35,10 +35,9 @@ function HomePage() {
         </div>
 
         <div className="header-right">
-          <div className="circle-icon wfn">WFN</div>
-          <div className="circle-icon red">♫</div>
-          <div className="circle-icon dark">🐎</div>
-          <div className="circle-icon green">Spotify</div>
+          <div className="circle-icon wfn"><img src="src\assets\images\WFNLogo-WhiteRound.png" alt="WFN logo" /></div>
+          <div className="circle-icon mustangs"><img src="src\assets\images\WesternMustangLogo1.svg" alt="Mustangs Logo"/></div>
+          <div className="circle-icon spotify"><img src="src\assets\images\Spotify Logo.png" alt="Spotify Logo" /></div>
         </div>
       </header>
 
