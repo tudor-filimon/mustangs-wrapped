@@ -44,17 +44,21 @@ function HomePage() {
       {/* === MAIN CONTENT === */}
       <main className="main-layout">
         
-        {/* ROW 1 */}
+        {/* ROW 1: Top Row For Campus Maps */}
         <div className="row top-row">
-          <button className="pill-btn">🗺️ Campus Maps</button>
-          <button className="pill-btn">🎵 Top Songs</button>
+          <button className="pill-btn"><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
+          <button className="pill-btn"><img src="src\assets\images\musicalNote.svg" alt="Musical Note Icon" /> Top Songs</button>
         </div>
 
         {/* ROW 2 - STRAIGHT LINE */}
         <div className="row middle-row">
-          <button className="pill-btn side-btn">👤 Account</button>
-          
-          <h1 className="central-title">Mustang Wrapped</h1>
+          <button className="pill-btn side-btn"> Account</button>
+
+    {/*Wrapped Sign in the middle. Each individual letter in a span so i can put hover effect animations on them  */}
+          <h1 className="title">
+            <span>M</span><span>u</span><span>s</span><span>t</span><span>a</span><span>n</span><span>g</span>
+            <span> </span><span>W</span><span>r</span><span>a</span><span>p</span><span>p</span><span>e</span><span>d</span>
+            </h1>
           
           <button className="pill-btn side-btn">👥 Friends</button>
         </div>

@@ -17,13 +17,13 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
 /* subset mode for dark mode, set as a different mode of the same home container(think the way hover works) */
 .home-container.dark {
-  background: linear-gradient(180deg, #5b3085 0%, #2a1b4e 100%);
+  background: linear-gradient(180deg, #1f1041 0%, #9065bc 100%);
   color: white;
 }
 
 /* subset mode for light mode, set as a different mode of the home container as well */
 .home-container.light {
-  background: linear-gradient(180deg, #9F7AEA 0%, #E8DEF8 100%);
+  background: linear-gradient(180deg, #9F7AEA 0%, #381d6c 100%);
   color: #5b3085; 
 }
 
@@ -101,7 +101,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
 /*  Container for the Mustangs Logo in the top right.changes the background colors */
 .circle-icon.mustangs { 
-  background: #E8DEF8; 
+  background: #5b3085; 
   color: #5b3085; 
 }
 
@@ -113,7 +113,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
 
 
-/* 5. LAYOUT (ORBITAL SYSTEM) */
+/* Replica of fgma orbital system, Gemini helped build this part */
 .main-layout {
   flex: 1;
   display: flex;
@@ -123,6 +123,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   padding-bottom: 80px;
 }
 
+/* General rule for all rows to keep shape */
 .row {
   display: flex;
   justify-content: center;
@@ -130,10 +131,13 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   width: 100%;
 }
 
+/* Campus maps and Top Songs Row */
 .top-row { margin-bottom: 20px; gap: 40px; }
+
+/* Settings and Mustang Wrapped Row */
 .bottom-row { margin-top: 20px; gap: 40px; }
 
-/* Straight Line Middle Row */
+/* Account and friends row */
 .middle-row {
   display: flex;
   flex-direction: row; 
@@ -144,8 +148,8 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   width: 100%;
 }
 
-/* 6. CENTRAL TITLE (Mustang Wrapped) */
-.central-title {
+/* Title rules for the whole title, sets font, box shadow, size , weight, and color */
+.title {
   font-family: "Jersey 25", sans-serif;
   font-size: 85px; 
   font-weight: 400;
@@ -153,8 +157,27 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   line-height: 1;
   white-space: nowrap; 
   color: white;
-  /* Strong Block Shadow */
   text-shadow: 4px 4px 0px #2e1052, 0 0 20px rgba(138, 56, 245, 0.4);
+}
+
+/* Rules for each individual letter, not super neccessary can put in main css module but added here for organization */
+.title span {
+  text-align: center;   
+  transition: font-weight 0.3s ease, color 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+}
+
+
+/* Hover rules for each individual letter, turns purple and gets bigger. Also goes up in the y coordinate 20px */
+.title span:hover {
+  text-align: center;
+  font-weight: 900;       
+  color: #5b3085;        
+  transform: scale(1.2);
+  transform: translateY(-20px); 
+  text-shadow:
+    0 0 8px rgb(255, 255, 255),
+    0 0 12px rgb(252, 249, 247);
 }
 
 /* 7. BUTTONS */
@@ -169,6 +192,10 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   white-space: nowrap; 
   transition: transform 0.2s, background-color 0.2s;
+}
+.pill-btn img{
+  width: 40px;      
+  height: 40px;     
 }
 .pill-btn:hover { transform: translateY(-3px); }
 .side-btn { padding: 25px 50px; }
