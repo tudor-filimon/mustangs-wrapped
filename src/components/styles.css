@@ -1,0 +1,333 @@
+/* Google Fonts Import  */
+@import url('https://fonts.googleapis.com/css2?family=Jersey+25&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+/* These styling rules apply to all the container and acts like an overlapping rules */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; overflow: hidden; }
+
+/* for the component thats the home */
+.home-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.3s ease;
+  position: relative; /* Added to act as anchor for absolute children */
+}
+
+/* subset mode for dark mode, set as a different mode of the same home container(think the way hover works) */
+.home-container.dark {
+  background: linear-gradient(180deg, #1f1041 0%, #9065bc 100%);
+  color: white;
+}
+
+/* subset mode for light mode, set as a different mode of the home container as well */
+.home-container.light {
+  background: linear-gradient(180deg, #9F7AEA 0%, #381d6c 100%);
+  color: #5b3085; 
+}
+
+/* Styling for all the header components (Text for username, buttons, and various different icons for spotify, WFN, apple logo, etc) 
+   Also includes styling for the dark/light buttons
+*/
+.header {
+  height: 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  position: relative; 
+  z-index: 2; /* Ensures header sits above floating icons */
+}
+
+/* Search bar styling, just simple styling to make rounded and give a bit of dynamic sense with a backdrop filter */
+.search-bar {
+  background: rgba(151, 53, 216, 0.2);
+  border-radius: 30px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 320px;
+  backdrop-filter: blur(25px);
+}
+/* For the input line thingy, done with GEMINI */
+.search-bar input { background: transparent; border: none; color: white; outline: none; width: 100%; }
+
+/* for the text that is there before any input */
+.search-bar input::placeholder { color: rgba(255,255,255,0.7); }
+
+/*Edits the gap between each of the icons in the top right corner*/
+.header-right { display: flex; gap: 12px; }
+
+
+/* rules for the 3 icons; spotify, western, and WFN
+  KEEPS HOW THEY look very consistent
+*/
+.circle-icon {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 0.9rem;
+  background: white; color: black;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 50px;
+  height: 50px;
+/* Makes container circular like logo */
+  border-radius: 50%;
+  overflow: hidden; 
+}
+
+/* forces the actual image inside the div to fit that mold */
+.circle-icon img {
+  width: 100%;      
+  height: 100%;     
+  object-fit: cover; 
+}
+
+.searchIcon img{
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+
+}
+
+/* Hover rules for all 3 of the circle icon buttons */
+.circle-icon:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); 
+}
+
+
+/* Container for the WFN logo in top right. Size can be played with and if color interferes can be removed */
+.circle-icon.wfn { 
+  background: #ffffff; 
+  color: #5b3085; 
+}
+
+
+
+/* Container for the Mustangs Logo in the top right.changes the background colors */
+.circle-icon.mustangs { 
+  background: #5b3085; 
+  color: #5b3085; 
+}
+
+/* Container for the Spotify Logo in the top right.changes the background colors*/
+.circle-icon.spotify { 
+  background: #e8def800; 
+}
+
+
+
+
+/* Replica of figma orbital system, Gemini helped build this part */
+.main-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 2; /* Ensures main content sits above floating icons */
+}
+
+/* General rule for all rows to keep shape */
+.row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+/* Campus maps and Top Songs Row */
+.top-row { margin-bottom: 20px; gap: 40px; }
+
+/* Settings and Mustang Wrapped Row */
+.bottom-row { margin-top: 20px; gap: 40px; }
+
+/* Account and friends row */
+.middle-row {
+  display: flex;
+  flex-direction: row; 
+  align-items: center; 
+  justify-content: center; 
+  flex-wrap: nowrap; 
+  gap: 20px;
+  width: 100%;
+}
+
+/* Title rules for the whole title, sets font, box shadow, size , weight, and color */
+.title {
+  font-family: "Jersey 25", sans-serif;
+  font-size: 85px; 
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap; 
+  color: white;
+  text-shadow: 4px 4px 0px #2e1052, 0 0 20px rgba(138, 56, 245, 0.4);
+}
+
+/* Rules for each individual letter, not super neccessary can put in main css module but added here for organization */
+.title span {
+  text-align: center;   
+  transition: font-weight 0.3s ease, color 0.3s ease, transform 0.3s ease;
+  cursor: pointer;
+}
+
+.darklightmode{
+  width: 40px;
+  height: 40px;
+
+
+}
+
+/* Hover rules for each individual letter, turns purple and gets bigger. Also goes up in the y coordinate 20px */
+.title span:hover {
+  text-align: center;
+  font-weight: 900;       
+  color: #5b3085;        
+  transform: scale(1.2);
+  transform: translateY(-20px); 
+  text-shadow:
+    0 0 8px rgb(255, 255, 255),
+    0 0 12px rgb(252, 249, 247);
+}
+
+/* 7. BUTTONS */
+.pill-btn {
+  border: none;
+  border-radius: 60px;
+  padding: 20px 40px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  white-space: nowrap; 
+  transition: transform 0.2s, background-color 0.2s;
+}
+.pill-btn img{
+  width: 40px;      
+  height: 40px;     
+}
+
+.pill-btn:hover { transform: translateY(-3px); }
+.side-btn { padding: 25px 50px; }
+
+/* New rule for the circular toggle button */
+.theme-toggle {
+  width: 45px;       
+  height: 45px;      
+  border-radius: 50%;
+  padding: 0;        
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  min-width: unset;  
+  aspect-ratio: 1/1; 
+}
+
+
+
+/* Dark Mode Buttons (Purple) */
+.home-container.dark .pill-btn {
+  background-color: #552d87; /* Deep Purple */
+  color: white;
+}
+.home-container.dark .pill-btn:hover { background-color: #6a3da0; }
+
+/* This switches the icons in the button main screen to white when its in dark mode */
+.home-container.dark .pill-btn img,
+.home-container.dark .side-btn img {
+  filter: brightness(0) invert(1);
+}
+
+/* Light Mode Buttons (White) */
+.home-container.light .pill-btn {
+  background-color: #ffffff; 
+  color: #4a2c7a; 
+}
+.home-container.light .pill-btn:hover { background-color: #f0f0f0; }
+
+/* This switches colours of all the icons inside the button from white to purple bacically using a hue rotate and playing with the brightness */
+.home-container.light .pill-btn img,
+.home-container.light .side-btn img {
+  filter: invert(22%) sepia(58%) saturate(2874%) hue-rotate(253deg) brightness(40%) contrast(90%);
+}
+
+/* 8. FOOTER */
+.now-playing {
+  position: absolute; bottom: 0; width: 100%; height: 80px;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 40px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  z-index: 2; /* Ensures footer sits above floating icons */
+}
+
+/* Footer Theme Logic */
+.home-container.dark .now-playing { background: rgba(46, 16, 82, 0.4); }
+.home-container.light .now-playing { background: rgba(255, 255, 255, 0.3); }
+
+.np-left { font-weight: 700; opacity: 0.9; }
+.visualizer-container { display: flex; gap: 6px; align-items: center; height: 30px; }
+.bar { width: 6px; background: white; border-radius: 4px; animation: bounce 1.2s infinite ease-in-out; }
+.bar:nth-child(1) { height: 15px; animation-delay: 0s; }
+.bar:nth-child(2) { height: 25px; animation-delay: 0.1s; }
+.bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+.bar:nth-child(4) { height: 20px; animation-delay: 0.3s; }
+.bar:nth-child(5) { height: 12px; animation-delay: 0.4s; }
+@keyframes bounce { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.8); } }
+
+.np-right { display: flex; align-items: center; gap: 15px; font-weight: 600; }
+
+.album-art img{
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  box-shadow:
+    0 0 50px rgb(255, 255, 255),
+    0 0 12px rgb(255, 255, 255);
+}
+
+.album-art img:hover{
+  text-align: center;             
+  transform: scale(1.2);
+}
+
+/* This is the container for all the icons, and allows to be in the background, deals with them being behind everything */
+.floating-bg-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0; 
+  pointer-events: none; 
+}
+
+/* For each individual icon, does the blur,opacity and size */
+.floater {
+  position: absolute;
+  opacity: 0.2; 
+  filter: blur(2px); 
+  transition: transform 8000ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+
+/* keeps the images inside the borders  */
+.floater img, .floater svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
