@@ -32,7 +32,7 @@ export default function PlaylistView() {
             </div>
             <button 
               style={styles.backButton}
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/wrapped')}
             >
               ← Back
             </button>

@@ -152,7 +152,7 @@ export default function MustangWrapped() {
         {/* Header */}
         <div style={styles.header}>
           <h1 style={styles.title}>Mustang Wrapped</h1>
-          <button style={styles.backButton} onClick={() => navigate('/')}>
+          <button style={styles.backButton} onClick={() => navigate('/home')}>
             ← Back
           </button>
         </div>
