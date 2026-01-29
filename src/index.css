@@ -1,0 +1,26 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #6b46c1 0%, #7c3aed 50%, #5b21b6 100%);
+  min-height: 100vh;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button:focus {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible) {
+  outline: none;
+}
+
