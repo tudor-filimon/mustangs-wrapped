@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CreateAccount from './CreateAccount';
 
 export default function MustangWrappedLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = () => {
     if (!email || !password) {
@@ -12,7 +14,8 @@ export default function MustangWrappedLogin() {
       return;
     }
     console.log('Login submitted:', { email, password });
-    alert(`Login attempted with email: ${email}`);
+    // alert(`Login attempted with email: ${email}`);
+    navigate('/home');
   };
 
   const goToCreateAccount = () => {

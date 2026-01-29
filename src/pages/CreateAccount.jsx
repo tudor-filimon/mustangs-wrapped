@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function CreateAccount({ onBack }) {
   const [email, setEmail] = useState('');
@@ -6,6 +7,7 @@ export default function CreateAccount({ onBack }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [profilePic, setProfilePic] = useState(null);
+  const navigate = useNavigate();
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -28,7 +30,8 @@ export default function CreateAccount({ onBack }) {
       return;
     }
     console.log('Account created:', { email, username });
-    alert('Account created successfully!');
+    // alert('Account created successfully!');
+    navigate('/home');
   };
 
   const handleKeyPress = (e) => {

@@ -6,16 +6,17 @@ import HomePage from './pages/Homepage.jsx'
 import MustangWrapped from './pages/wrappedScreen.jsx'
 import PlaylistView from './pages/playlistScreen.jsx'
 import ProfilePage from './pages/ProfilePage'
-// import LoginPage from './pages/LoginPage' // <-- Uncomment this if/when you have a Login page file
+import MustangWrappedLogin from './pages/loginScreen.jsx'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Route "/" is the default page. 
-          I set this to HomePage as you requested.
-        */}
-        <Route path="/" element={<HomePage />} />
+        {/* Route "/" is the default page. */}
+        <Route path="/" element={<MustangWrappedLogin />} />
+
+        {/* Route "/home" is now the main dashboard. */}
+        <Route path="/home" element={<HomePage />} />
 
         {/* These are the other pages.
           You can navigate to them using <Link to="/wrapped"> or navigate('/wrapped')
@@ -24,7 +25,6 @@ function App() {
         <Route path="/playlist" element={<PlaylistView />} />
         <Route path="/profile" element={<ProfilePage />} />
         
-        {/* <Route path="/login" element={<LoginPage />} /> */}
       </Routes>
     </BrowserRouter>
   )
