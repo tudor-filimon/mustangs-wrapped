@@ -13,6 +13,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   display: flex;
   flex-direction: column;
   transition: background 0.3s ease;
+  position: relative; /* Added to act as anchor for absolute children */
 }
 
 /* subset mode for dark mode, set as a different mode of the same home container(think the way hover works) */
@@ -36,6 +37,8 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   justify-content: space-between;
   align-items: center;
   padding: 0 30px;
+  position: relative; 
+  z-index: 2; /* Ensures header sits above floating icons */
 }
 
 /* Search bar styling, just simple styling to make rounded and give a bit of dynamic sense with a backdrop filter */
@@ -83,8 +86,14 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   object-fit: cover; 
 }
 
+.searchIcon img{
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
 
-/*  Hover rules for all 3 of the circle icon buttons */
+}
+
+/* Hover rules for all 3 of the circle icon buttons */
 .circle-icon:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); 
@@ -99,7 +108,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
 
 
-/*  Container for the Mustangs Logo in the top right.changes the background colors */
+/* Container for the Mustangs Logo in the top right.changes the background colors */
 .circle-icon.mustangs { 
   background: #5b3085; 
   color: #5b3085; 
@@ -113,7 +122,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 
 
 
-/* Replica of fgma orbital system, Gemini helped build this part */
+/* Replica of figma orbital system, Gemini helped build this part */
 .main-layout {
   flex: 1;
   display: flex;
@@ -121,6 +130,8 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   justify-content: center;
   align-items: center;
   padding-bottom: 80px;
+  position: relative;
+  z-index: 2; /* Ensures main content sits above floating icons */
 }
 
 /* General rule for all rows to keep shape */
@@ -167,6 +178,12 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   cursor: pointer;
 }
 
+.darklightmode{
+  width: 40px;
+  height: 40px;
+
+
+}
 
 /* Hover rules for each individual letter, turns purple and gets bigger. Also goes up in the y coordinate 20px */
 .title span:hover {
@@ -197,10 +214,25 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   width: 40px;      
   height: 40px;     
 }
+
 .pill-btn:hover { transform: translateY(-3px); }
 .side-btn { padding: 25px 50px; }
 
-/* --- BUTTON THEMES --- */
+/* New rule for the circular toggle button */
+.theme-toggle {
+  width: 45px;       
+  height: 45px;      
+  border-radius: 50%;
+  padding: 0;        
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  min-width: unset;  
+  aspect-ratio: 1/1; 
+}
+
+
 
 /* Dark Mode Buttons (Purple) */
 .home-container.dark .pill-btn {
@@ -209,13 +241,24 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 }
 .home-container.dark .pill-btn:hover { background-color: #6a3da0; }
 
+/* This switches the icons in the button main screen to white when its in dark mode */
+.home-container.dark .pill-btn img,
+.home-container.dark .side-btn img {
+  filter: brightness(0) invert(1);
+}
+
 /* Light Mode Buttons (White) */
 .home-container.light .pill-btn {
-  background-color: #ffffff; /* White */
-  color: #4a2c7a; /* Dark Text */
+  background-color: #ffffff; 
+  color: #4a2c7a; 
 }
 .home-container.light .pill-btn:hover { background-color: #f0f0f0; }
 
+/* This switches colours of all the icons inside the button from white to purple bacically using a hue rotate and playing with the brightness */
+.home-container.light .pill-btn img,
+.home-container.light .side-btn img {
+  filter: invert(22%) sepia(58%) saturate(2874%) hue-rotate(253deg) brightness(40%) contrast(90%);
+}
 
 /* 8. FOOTER */
 .now-playing {
@@ -224,6 +267,7 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   padding: 0 40px;
   border-top: 1px solid rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
+  z-index: 2; /* Ensures footer sits above floating icons */
 }
 
 /* Footer Theme Logic */
@@ -241,4 +285,49 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
 @keyframes bounce { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.8); } }
 
 .np-right { display: flex; align-items: center; gap: 15px; font-weight: 600; }
-.album-art { width: 56px; height: 56px; background: #d4a574; border-radius: 4px; }
+
+.album-art img{
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  box-shadow:
+    0 0 50px rgb(255, 255, 255),
+    0 0 12px rgb(255, 255, 255);
+}
+
+.album-art img:hover{
+  text-align: center;             
+  transform: scale(1.2);
+}
+
+/* This is the container for all the icons, and allows to be in the background, deals with them being behind everything */
+.floating-bg-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0; 
+  pointer-events: none; 
+}
+
+/* For each individual icon, does the blur,opacity and size */
+.floater {
+  position: absolute;
+  opacity: 0.2; 
+  filter: blur(2px); 
+  transition: transform 8000ms ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+}
+
+/* keeps the images inside the borders  */
+.floater img, .floater svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
