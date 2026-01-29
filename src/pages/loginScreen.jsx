@@ -215,7 +215,7 @@ const styles = {
     minHeight: '100vh',
     background: 'linear-gradient(to bottom right, #d8b4fe, #c084fc, #a855f7)',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'auto',
     fontFamily: "'Poppins', sans-serif",
   },
   backgroundElements: {

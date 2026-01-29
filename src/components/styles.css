@@ -4,7 +4,11 @@
 
 /* These styling rules apply to all the container and acts like an overlapping rules */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; overflow: hidden; }
+body { 
+  font-family: 'Inter', sans-serif; 
+  overflow-x: hidden;
+  overflow-y: auto;
+}
 
 /* for the component thats the home */
 .home-container {

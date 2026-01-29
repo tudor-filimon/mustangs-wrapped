@@ -241,7 +241,7 @@ const styles = {
     background: 'linear-gradient(to bottom right, #d8b4fe, #c084fc, #a855f7)',
     padding: '40px 20px',
     position: 'relative',
-    overflow: 'hidden',
+    overflow: 'auto',
   },
   backgroundElements: {
     position: 'absolute',
