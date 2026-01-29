@@ -9,7 +9,8 @@ const styles = {
     fontFamily: 'system-ui, -apple-system, sans-serif',
     margin: 0,
     border: 'none',
-    outline: 'none'
+    outline: 'none',
+    animation: 'slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1)' 
   },
   content: {
     maxWidth: '1200px',
@@ -151,7 +152,7 @@ export default function MustangWrapped() {
         {/* Header */}
         <div style={styles.header}>
           <h1 style={styles.title}>Mustang Wrapped</h1>
-          <button style={styles.backButton}>
+          <button style={styles.backButton} onClick={() => navigate('/')}>
             ← Back
           </button>
         </div>

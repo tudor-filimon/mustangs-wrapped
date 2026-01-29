@@ -300,7 +300,9 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   transform: scale(1.2);
 }
 
-/* This is the container for all the icons, and allows to be in the background, deals with them being behind everything */
+/* === NEW: Floating Background Animation === */
+
+/* Ensures the floating icons stay behind the buttons and text */
 .floating-bg-container {
   position: absolute;
   top: 0;
@@ -308,26 +310,46 @@ body { font-family: 'Inter', sans-serif; overflow: hidden; }
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: 0; 
-  pointer-events: none; 
+  z-index: 0; /* Behind everything else */
+  pointer-events: none; /* Allows you to click buttons "through" the icons */
 }
 
-/* For each individual icon, does the blur,opacity and size */
+/* The individual floating item */
 .floater {
   position: absolute;
+  width: 60px; 
+  height: 60px; 
   opacity: 0.2; 
   filter: blur(2px); 
+  
+  /* The "Smart Animate" logic: Move slowly over 8 seconds */
   transition: transform 8000ms ease-out;
+  
+  /* Center the icon/emoji inside the div */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
 }
 
-/* keeps the images inside the borders  */
+/* OPTIONAL: If you switch to SVGs later, this ensures they fit */
 .floater img, .floater svg {
   width: 100%;
   height: 100%;
-  fill: currentColor;
+  object-fit: contain;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%; 
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
 import sunIcon from '../assets/images/sunIcon.svg';
 import moonIcon from '../assets/images/moonIcon.svg';
@@ -8,25 +9,24 @@ import blackHorse from '../assets/images/movingBackgroundBlackHorse.svg';
 import whiteHorse from '../assets/images/whiteHorseBackgroundIcon.svg';
 import Mustang from '../assets/images/WesternMustangLogo1.svg';
 
-
-
 // === BACKGROUND ICONS CONFIGURATION ===
 // Placeholders (Emojis) - Replace these with your SVG components or <img> tags later
 const FLOATER_ICONS = [
-  <img src={blackSpotify} alt="Black Spotify"/>, 
-  <img src={whiteHorse} alt="Black Spotify"/>, 
-  <img src={blackHorse} alt="Black Spotify" />, 
-  <img src={Mustang} alt="Black Spotify"/>,
-  <img src={purpleSpotify} alt="Black Spotify"/>
+  <img src={blackSpotify} alt="Black Spotify" />, 
+  <img src={whiteHorse} alt="White Horse" />, 
+  <img src={blackHorse} alt="Black Horse" />, 
+  <img src={Mustang} alt="Mustang Logo" />,
+  <img src={purpleSpotify} alt="Purple Spotify" />
 ]; 
 const FLOATER_COUNT = 25; // Number of floating items
 
 function HomePage() {
   // Toggle this to see the Light/Dark mode changes
   const [theme, setTheme] = useState('dark'); 
+  const navigate = useNavigate();
 
   return (
-    <div className={`home-container ${theme}`}>
+    <div className={`home-container ${theme} page-transition`}>
       
       {/* === FLOATING BACKGROUND LAYER === */}
       <div className="floating-bg-container">
@@ -91,7 +91,7 @@ function HomePage() {
         {/* ROW 3 */}
         <div className="row bottom-row">
           <button className="pill-btn"><img src="src\assets\images\SettingsIcon.svg" alt="Settings Icons"/>Settings</button>
-          <button className="pill-btn"><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
+          <button className="pill-btn" onClick={() => navigate('/wrapped')}><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
         </div>
 
       </main>
