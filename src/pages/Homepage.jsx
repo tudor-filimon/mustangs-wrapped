@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
-import AnimatedBackground from '../components/AnimatedBackground'; // Import the new component
+import AnimatedBackground from '../components/AnimatedBackground';
 import sunIcon from '../assets/images/sunIcon.svg';
 import moonIcon from '../assets/images/moonIcon.svg';
 
@@ -16,10 +16,8 @@ function HomePage() {
   return (
     <div className={`home-container ${theme} page-transition`}>
       
-      {/* === FLOATING BACKGROUND LAYER === */}
+    {/* Handles the animated background */}
       <AnimatedBackground />
-
-      {/* === MODAL POPUP (Conditionally Rendered) === */}
       {showWfnModal && (
         <div className="modal-overlay" onClick={() => setShowWfnModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -29,7 +27,6 @@ function HomePage() {
         </div>
       )}
 
-      {/* === HEADER === */}
       <header className="header">
         
           <button 
@@ -54,7 +51,7 @@ function HomePage() {
         </div>
 
         <div className="header-right">
-          {/* Added onClick here to open the modal */}
+          {/* Added onClick sets the modal state to true to open the modal */}
           <div className="circle-icon wfn" onClick={() => setShowWfnModal(true)}>
             <img src="src\assets\images\WFNLogo-WhiteRound.png" alt="WFN logo" />
           </div>
