@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AnimatedBackground from '../components/AnimatedBackground'; // Import
 
 export default function CreateAccount({ onBack }) {
   const [email, setEmail] = useState('');
@@ -42,6 +43,9 @@ export default function CreateAccount({ onBack }) {
 
   return (
     <div style={styles.container}>
+      {/* Inserted the Reusable Background */}
+      <AnimatedBackground />
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
@@ -56,62 +60,7 @@ export default function CreateAccount({ onBack }) {
         .pixel-font {
           font-family: 'Press Start 2P', cursive;
         }
-        
-        @keyframes float1 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(20px, -30px) rotate(5deg); }
-          50% { transform: translate(-15px, -50px) rotate(-5deg); }
-          75% { transform: translate(25px, -25px) rotate(3deg); }
-        }
-        @keyframes float2 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(-25px, 40px) rotate(-7deg); }
-          66% { transform: translate(30px, 20px) rotate(7deg); }
-        }
-        @keyframes float3 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(-20px, -40px) rotate(10deg); }
-        }
-        @keyframes float4 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(15px, 35px) rotate(-8deg); }
-          50% { transform: translate(-20px, 15px) rotate(8deg); }
-          75% { transform: translate(10px, -20px) rotate(-4deg); }
-        }
-        @keyframes float5 {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(25px, -20px) rotate(6deg); }
-          66% { transform: translate(-30px, 30px) rotate(-6deg); }
-        }
-        @keyframes musicFloat1 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-          50% { transform: translate(20px, -30px) scale(1.1); opacity: 0.5; }
-        }
-        @keyframes musicFloat2 {
-          0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-          50% { transform: translate(-25px, 25px) scale(0.9); opacity: 0.5; }
-        }
-        
-        .float-1 { animation: float1 8s ease-in-out infinite; }
-        .float-2 { animation: float2 10s ease-in-out infinite; }
-        .float-3 { animation: float3 7s ease-in-out infinite; }
-        .float-4 { animation: float4 9s ease-in-out infinite; }
-        .float-5 { animation: float5 11s ease-in-out infinite; }
-        .music-1 { animation: musicFloat1 6s ease-in-out infinite; }
-        .music-2 { animation: musicFloat2 7s ease-in-out infinite; }
       `}</style>
-
-      {/* Background decorative elements */}
-      <div style={styles.backgroundElements}>
-        <div className="float-1" style={{...styles.horse, top: '100px', left: '60px'}}>🐴</div>
-        <div className="float-2" style={{...styles.horse, top: '130px', right: '80px'}}>🐴</div>
-        <div className="float-3" style={{...styles.horse, bottom: '200px', left: '100px'}}>🐴</div>
-        <div className="float-4" style={{...styles.horse, top: '220px', right: '130px'}}>🐴</div>
-        <div className="float-5" style={{...styles.horse, bottom: '130px', right: '60px'}}>🐴</div>
-        
-        <div className="music-1" style={{...styles.music, top: '160px', left: '25%'}}>🎵</div>
-        <div className="music-2" style={{...styles.music, bottom: '160px', right: '25%'}}>🎵</div>
-      </div>
 
       {/* Back Button */}
       <button
@@ -243,23 +192,6 @@ const styles = {
     position: 'relative',
     overflow: 'auto',
   },
-  backgroundElements: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    pointerEvents: 'none',
-  },
-  horse: {
-    position: 'absolute',
-    fontSize: '50px',
-    opacity: 0.3,
-  },
-  music: {
-    position: 'absolute',
-    fontSize: '60px',
-  },
   backButton: {
     position: 'absolute',
     top: '30px',
@@ -273,6 +205,7 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    zIndex: 20, // Ensured back button is clickable above the background
   },
   mainContent: {
     position: 'relative',

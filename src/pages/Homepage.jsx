@@ -1,24 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
+import AnimatedBackground from '../components/AnimatedBackground'; // Import the new component
 import sunIcon from '../assets/images/sunIcon.svg';
 import moonIcon from '../assets/images/moonIcon.svg';
-import blackSpotify from '../assets/images/blackSpotifyBackgroundIcon.svg';
-import purpleSpotify from '../assets/images/purpleSpotifyBackgroundIcon.svg';
-import blackHorse from '../assets/images/movingBackgroundBlackHorse.svg';
-import whiteHorse from '../assets/images/whiteHorseBackgroundIcon.svg';
-import Mustang from '../assets/images/WesternMustangLogo1.svg';
-
-// === BACKGROUND ICONS CONFIGURATION ===
-// Placeholders (Emojis) - Replace these with your SVG components or <img> tags later
-const FLOATER_ICONS = [
-  <img src={blackSpotify} alt="Black Spotify" />, 
-  <img src={whiteHorse} alt="White Horse" />, 
-  <img src={blackHorse} alt="Black Horse" />, 
-  <img src={Mustang} alt="Mustang Logo" />,
-  <img src={purpleSpotify} alt="Purple Spotify" />
-]; 
-const FLOATER_COUNT = 25; // Number of floating items
 
 function HomePage() {
   // Toggle this to see the Light/Dark mode changes
@@ -29,11 +14,7 @@ function HomePage() {
     <div className={`home-container ${theme} page-transition`}>
       
       {/* === FLOATING BACKGROUND LAYER === */}
-      <div className="floating-bg-container">
-        {[...Array(FLOATER_COUNT)].map((_, i) => (
-          <BackgroundFloater key={i} icon={FLOATER_ICONS[i % FLOATER_ICONS.length]} />
-        ))}
-      </div>
+      <AnimatedBackground />
 
       {/* === HEADER === */}
       <header className="header">
@@ -114,47 +95,6 @@ function HomePage() {
         </div>
       </div>
 
-    </div>
-  );
-}
-
-// === BACKGROUND FLOATER COMPONENT ===
-// This component handles the random movement logic for each individual icon
-function BackgroundFloater({ icon }) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    // 1. Initial random placement
-    const startX = Math.random() * window.innerWidth;
-    const startY = Math.random() * window.innerHeight;
-    setPosition({ x: startX, y: startY });
-
-    // 2. Logic to pick a new random spot
-    const move = () => {
-      // Subtract 50px to keep it mostly on screen
-      const newX = Math.random() * (window.innerWidth - 50);
-      const newY = Math.random() * (window.innerHeight - 50);
-      setPosition({ x: newX, y: newY });
-    };
-
-    // 3. Start moving shortly after mounting
-    const initialTimer = setTimeout(move, 100);
-
-    // 4. Repeat move every 8 seconds (matches CSS transition)
-    const interval = setInterval(move, 8000);
-
-    return () => {
-      clearTimeout(initialTimer);
-      clearInterval(interval);
-    };
-  }, []);
-
-  return (
-    <div 
-      className="floater" 
-      style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
-    >
-      {icon}
     </div>
   );
 }
