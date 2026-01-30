@@ -8,6 +8,9 @@ import moonIcon from '../assets/images/moonIcon.svg';
 function HomePage() {
   // Toggle this to see the Light/Dark mode changes
   const [theme, setTheme] = useState('dark'); 
+  // State for the WFN Modal
+  const [showWfnModal, setShowWfnModal] = useState(false);
+  
   const navigate = useNavigate();
 
   return (
@@ -15,6 +18,16 @@ function HomePage() {
       
       {/* === FLOATING BACKGROUND LAYER === */}
       <AnimatedBackground />
+
+      {/* === MODAL POPUP (Conditionally Rendered) === */}
+      {showWfnModal && (
+        <div className="modal-overlay" onClick={() => setShowWfnModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal-btn" onClick={() => setShowWfnModal(false)}>✕</button>
+            <img src="src\assets\images\teamPhoto.JPEG" alt="Projects Group of people" />
+          </div>
+        </div>
+      )}
 
       {/* === HEADER === */}
       <header className="header">
@@ -41,7 +54,11 @@ function HomePage() {
         </div>
 
         <div className="header-right">
-          <div className="circle-icon wfn"><img src="src\assets\images\WFNLogo-WhiteRound.png" alt="WFN logo" /></div>
+          {/* Added onClick here to open the modal */}
+          <div className="circle-icon wfn" onClick={() => setShowWfnModal(true)}>
+            <img src="src\assets\images\WFNLogo-WhiteRound.png" alt="WFN logo" />
+          </div>
+          
           <div className="circle-icon mustangs"><img src="src\assets\images\WesternMustangLogo1.svg" alt="Mustangs Logo"/></div>
           <div className="circle-icon spotify"><img src="src\assets\images\Spotify Logo.png" alt="Spotify Logo" /></div>
         </div>
