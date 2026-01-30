@@ -69,13 +69,13 @@ function HomePage() {
         
         {/* ROW 1: Top Row For Campus Maps */}
         <div className="row top-row">
-          <button className="pill-btn"><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
-          <button className="pill-btn"><img src="src\assets\images\musicalNote.svg" alt="Musical Note Icon" /> Top Songs</button>
+          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
+          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\musicalNote.svg" alt="Musical Note Icon" /> Top Songs</button>
         </div>
 
         {/* ROW 2 - STRAIGHT LINE */}
         <div className="row middle-row">
-          <button className="pill-btn side-btn"><img src="src\assets\images\Account.svg" alt="Account Icon" />Account</button>
+          <button className="pill-btn side-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\Account.svg" alt="Account Icon" />Account</button>
 
     {/*Wrapped Sign in the middle. Each individual letter in a span so i can put hover effect animations on them  */}
           <h1 className="title">
@@ -83,12 +83,12 @@ function HomePage() {
             <span> </span><span>W</span><span>r</span><span>a</span><span>p</span><span>p</span><span>e</span><span>d</span>
             </h1>
           
-          <button className="pill-btn side-btn"><img src="src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends</button>
+          <button className="pill-btn side-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends</button>
         </div>
 
         {/* ROW 3 */}
         <div className="row bottom-row">
-          <button className="pill-btn"><img src="src\assets\images\SettingsIcon.svg" alt="Settings Icons"/>Settings</button>
+          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\SettingsIcon.svg" alt="Settings Icons"/>Settings</button>
           <button className="pill-btn" onClick={() => navigate('/wrapped')}><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
         </div>
 

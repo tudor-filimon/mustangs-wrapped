@@ -7,6 +7,7 @@ import MustangWrapped from './pages/wrappedScreen.jsx'
 import PlaylistView from './pages/playlistScreen.jsx'
 import ProfilePage from './pages/ProfilePage'
 import MustangWrappedLogin from './pages/loginScreen.jsx'
+import ComingSoon from './pages/ComingSoon.jsx'
 
 function App() {
   return (
@@ -24,7 +25,8 @@ function App() {
         <Route path="/wrapped" element={<MustangWrapped />} />
         <Route path="/playlist" element={<PlaylistView />} />
         <Route path="/profile" element={<ProfilePage />} />
-        
+        <Route path="/coming-soon" element={<ComingSoon />} />
+
       </Routes>
     </BrowserRouter>
   )

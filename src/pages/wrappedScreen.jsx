@@ -1,10 +1,13 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../components/styles.css';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 50%, #5b21b6 100%)',
+    position: 'relative',
+    zIndex: 1,
     padding: '40px',
     fontFamily: 'system-ui, -apple-system, sans-serif',
     margin: 0,
@@ -144,7 +147,8 @@ export default function MustangWrapped() {
   }
 
   return (
-    <>
+    <div className="home-container dark page-transition">
+      <AnimatedBackground />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
       `}</style>
@@ -194,6 +198,6 @@ export default function MustangWrapped() {
         <div style={styles.bottomDivider}></div>
       </div>
     </div>
-    </>
+    </div>
   );
 }

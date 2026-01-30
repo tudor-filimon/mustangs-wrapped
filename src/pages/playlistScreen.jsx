@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../components/styles.css';
+import AnimatedBackground from '../components/AnimatedBackground';
 
 export default function PlaylistView() {
   const navigate = useNavigate();
@@ -13,7 +15,8 @@ export default function PlaylistView() {
   ];
 
   return (
-    <>
+    <div className="home-container dark page-transition">
+      <AnimatedBackground />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
       `}</style>
@@ -61,14 +64,15 @@ export default function PlaylistView() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #6b46c1 0%, #7c3aed 50%, #5b21b6 100%)',
+    position: 'relative',
+    zIndex: 1,
     padding: '40px 20px',
     fontFamily: 'system-ui, -apple-system, sans-serif'
   },
