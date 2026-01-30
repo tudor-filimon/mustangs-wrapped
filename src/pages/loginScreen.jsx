@@ -68,7 +68,7 @@ export default function MustangWrappedLogin() {
         {/* Login Form */}
         <div style={styles.formBox}>
           <div style={styles.formHeader}>
-            <span style={styles.horseIcon}>🐴</span>
+            <span style={styles.horseIcon}><img src="src\assets\images\horseIcon.svg" alt="Horse Icon" /></span>
             <h2 className="pixel-font" style={styles.formTitle}>
               Login
             </h2>

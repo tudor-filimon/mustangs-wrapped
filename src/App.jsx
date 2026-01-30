@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 
-// Import all your pages here
+// Allpages that are being used are imported here
 import HomePage from './pages/Homepage.jsx'
 import MustangWrapped from './pages/wrappedScreen.jsx'
 import PlaylistView from './pages/playlistScreen.jsx'
