@@ -15,7 +15,6 @@ export default function MustangWrappedLogin() {
       return;
     }
     console.log('Login submitted:', { email, password });
-    // alert(`Login attempted with email: ${email}`);
     navigate('/home');
   };
 
@@ -68,7 +67,10 @@ export default function MustangWrappedLogin() {
         {/* Login Form */}
         <div style={styles.formBox}>
           <div style={styles.formHeader}>
-            <span style={styles.horseIcon}><img src="src\assets\images\horseIcon.svg" alt="Horse Icon" /></span>
+            {/* APPLIED NEW IMAGE STYLE HERE */}
+            <span style={styles.horseIcon}>
+              <img src="src\assets\images\horseIcon.svg" alt="Horse Icon" style={styles.iconImage} />
+            </span>
             <h2 className="pixel-font" style={styles.formTitle}>
               Login
             </h2>
@@ -112,7 +114,11 @@ export default function MustangWrappedLogin() {
               onMouseEnter={(e) => e.target.style.backgroundColor = '#f3e8ff'}
               onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
             >
-              🐴 Login
+              {/* APPLIED NEW IMAGE STYLE HERE TOO */}
+              <span style={{...styles.horseIcon, width: '30px', height: '30px', marginRight: '10px'}}>
+                <img src="src\assets\images\WesternMustangLogo1.svg" alt="Western Logo" style={styles.iconImage} />
+              </span>
+                Login
             </button>
 
             {/* New Here Button */}
@@ -190,8 +196,18 @@ const styles = {
     marginBottom: '35px',
   },
   horseIcon: {
-    fontSize: '40px',
     marginRight: '15px',
+    width: '40px',
+    height: '40px',
+    display: 'flex', 
+    justifyContent: 'center',
+    alignItems: 'center',
+    background: 'auto'
+  },
+  iconImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
   },
   formTitle: {
     fontSize: '35px',
@@ -243,6 +259,9 @@ const styles = {
     transition: 'all 0.2s',
     marginBottom: '15px',
     marginTop: '10px',
+    display: 'flex', // Ensure button uses flex for icon alignment
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomText: {
     marginTop: '80px',
