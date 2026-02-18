@@ -27,23 +27,13 @@ const styles = {
     marginBottom: '60px'
   },
   title: {
-    fontSize: '48px',
-    fontWeight: 'bold',
+    fontSize: '50px',
+    fontWeight: '400px',
     color: 'white',
     margin: 0,
-    letterSpacing: '1px',
-    fontFamily: "'Press Start 2P', cursive",
-    textShadow: `
-      4px 4px 0px rgba(0, 0, 0, 0.5),
-      -2px -2px 0px #6b46c1,
-      2px -2px 0px #6b46c1,
-      -2px 2px 0px #6b46c1,
-      2px 2px 0px #6b46c1,
-      -2px 0px 0px #6b46c1,
-      2px 0px 0px #6b46c1,
-      0px -2px 0px #6b46c1,
-      0px 2px 0px #6b46c1
-    `
+    letterSpacing: '2px',
+    fontFamily: "'Jersey 25', cursive",
+    textShadow: "10px 5px 2px #2e1052, 0 0 20px rgba(138, 56, 245, 0.4)",
   },
   backButton: {
     backgroundColor: '#e9d5ff',

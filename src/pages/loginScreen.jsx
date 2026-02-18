@@ -32,14 +32,28 @@ export default function MustangWrappedLogin() {
     }
   };
 
+  // Define the custom floating text for the background
+  const loginFloatingText = [
+    <span style={{ ...styles.tagline, whiteSpace: 'nowrap' }}>Listen Local.</span>,
+    <span style={{ ...styles.tagline, whiteSpace: 'nowrap' }}>
+      Sync Your <span style={styles.purple}>Semester.</span>
+    </span>,
+    <span style={{ ...styles.tagline, whiteSpace: 'nowrap' }}>
+      Campus, <span style={styles.white}>Amplified</span>
+    </span>,
+    <span style={{ ...styles.tagline, whiteSpace: 'nowrap' }}>
+      Your Major. <span style={styles.purpleLight}>Your Music.</span>
+    </span>
+  ];
+
   if (showCreateAccount) {
     return <CreateAccount onBack={goBackToLogin} />;
   }
 
   return (
     <div style={styles.container}>
-      {/* Inserted the Reusable Background */}
-      <AnimatedBackground />
+      {/* Pass the custom text items to the background */}
+      <AnimatedBackground customItems={loginFloatingText} />
       
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
@@ -55,6 +69,12 @@ export default function MustangWrappedLogin() {
         .pixel-font {
           font-family: 'Press Start 2P', cursive;
         }
+
+        /* Added class for placeholder color support */
+        .login-input::placeholder {
+            color: #9065bc;
+            opacity: 1;
+        }
       `}</style>
 
       {/* Main content */}
@@ -67,7 +87,6 @@ export default function MustangWrappedLogin() {
         {/* Login Form */}
         <div style={styles.formBox}>
           <div style={styles.formHeader}>
-            {/* APPLIED NEW IMAGE STYLE HERE */}
             <span style={styles.horseIcon}>
               <img src="src\assets\images\horseIcon.svg" alt="Horse Icon" style={styles.iconImage} />
             </span>
@@ -88,6 +107,7 @@ export default function MustangWrappedLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="enter your email"
+                className="login-input"
                 style={styles.input}
               />
             </div>
@@ -103,6 +123,7 @@ export default function MustangWrappedLogin() {
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="enter your password"
+                className="login-input"
                 style={styles.input}
               />
             </div>
@@ -114,7 +135,6 @@ export default function MustangWrappedLogin() {
               onMouseEnter={(e) => e.target.style.backgroundColor = '#f3e8ff'}
               onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
             >
-              {/* APPLIED NEW IMAGE STYLE HERE TOO */}
               <span style={{...styles.horseIcon, width: '30px', height: '30px', marginRight: '10px'}}>
                 <img src="src\assets\images\WesternMustangLogo1.svg" alt="Western Logo" style={styles.iconImage} />
               </span>
@@ -155,10 +175,10 @@ export default function MustangWrappedLogin() {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(to bottom right, #d8b4fe, #c084fc, #a855f7)',
+    background: 'linear-gradient(180deg, #1f1041 0%, #9065bc 100%)',
     position: 'relative',
     overflow: 'auto',
-    fontFamily: "'Poppins', sans-serif",
+    fontFamily: "'Jersey 25', sans-serif",
   },
   mainContent: {
     position: 'relative',
@@ -171,14 +191,17 @@ const styles = {
     padding: '20px',
   },
   title: {
-    fontSize: '70px',
-    fontWeight: 900,
+    fontSize: '85px',
+    fontWeight: 400,
     color: 'white',
     marginBottom: '80px',
     textAlign: 'center',
-    textShadow: '5px 5px 0px rgba(88, 28, 135, 0.6)',
-    WebkitTextStroke: '3px rgba(109, 40, 217, 0.4)',
-    letterSpacing: '2px',
+    fontFamily: "'Jersey 25', sans-serif",
+    textShadow: "0 0 7px #fff, 0 0 10px  #bc13fe, 0 0 82px #bc13fe,0 0 92px #bc13fe",
+    textTransform: "uppercase",
+    WebkitTextStroke:" 8px black",
+    paintOrder: "stroke fill",
+    letterSpacing: "0.4em",
   },
   formBox: {
     backgroundColor: '#9333ea',
@@ -212,18 +235,27 @@ const styles = {
   formTitle: {
     fontSize: '35px',
     fontWeight: 'bold',
-    color: 'white',
-    textShadow: '3px 3px 0px rgba(0, 0, 0, 0.3)',
+    fontFamily: "'Jersey 25', sans-serif",
+    color: "#fdfdfd",
+    textShadow: " 0 0 10px  #bc13fe, 0 0 82px #bc13fe,0 0 92px #bc13fe",
+    textTransform: "uppercase",
+    paintOrder: "stroke fill",
+    letterSpacing: "0.4em",
   },
   inputGroup: {
     marginBottom: '25px',
   },
   label: {
     display: 'block',
-    color: 'white',
-    fontSize: '16px',
+    fontSize: '25px',
     marginBottom: '12px',
-    textShadow: '2px 2px 0px rgba(0, 0, 0, 0.2)',
+    fontFamily: "'Jersey 25', sans-serif",
+    color: "#e6dbf1",
+    textShadow: "  0 0 10px #bc13fe, 0 0 82px #bc13fe,0 0 92px #bc13fe",
+    textTransform: "uppercase",
+    paintOrder: "stroke fill",
+    letterSpacing: "0.4em",
+    fontWeight: "40px",
   },
   input: {
     width: '100%',
@@ -232,26 +264,35 @@ const styles = {
     fontSize: '18px',
     border: '2px solid #c084fc',
     outline: 'none',
-    color: '#1f2937',
+    color: '#9065bc',
   },
   toggleButton: {
     width: '100%',
     backgroundColor: '#ddd6fe',
     color: '#6b21a8',
-    fontSize: '16px',
     padding: '20px',
     borderRadius: '18px',
     border: '3px solid rgba(147, 51, 234, 0.3)',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    fontFamily: "'Jersey 25', sans-serif",
+    fontSize: "20px",
     marginTop: '10px',
+    textShadow: " 0 0 100px #ffffff,0 0 92px #250333",
+    textTransform: "uppercase",
+    paintOrder: "stroke fill",
+    letterSpacing: "0.4em",
+    fontWeight: "40px",
   },
   submitButton: {
     width: '100%',
     backgroundColor: 'white',
     color: '#9333ea',
-    fontSize: '22px',
-    fontWeight: 'bold',
+    textShadow: "  0 0 10px #bc13fe, 0 0 82px #bc13fe,0 0 92px #bc13fe",
+    textTransform: "uppercase",
+    paintOrder: "stroke fill",
+    letterSpacing: "0.4em",
+    fontWeight: "40px",
     padding: '18px',
     borderRadius: '18px',
     border: 'none',
@@ -259,7 +300,7 @@ const styles = {
     transition: 'all 0.2s',
     marginBottom: '15px',
     marginTop: '10px',
-    display: 'flex', // Ensure button uses flex for icon alignment
+    display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
