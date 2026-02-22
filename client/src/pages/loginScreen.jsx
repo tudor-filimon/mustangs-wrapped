@@ -1,21 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import CreateAccount from './CreateAccount';
-import AnimatedBackground from '../components/AnimatedBackground'; 
+import AnimatedBackground from '../components/AnimatedBackground';
+import { useAuth } from '../context/AuthContext';
 
 export default function MustangWrappedLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showCreateAccount, setShowCreateAccount] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!email || !password) {
-      alert('Please fill in both email and password');
+      setError('Please fill in both email and password');
       return;
     }
-    console.log('Login submitted:', { email, password });
-    navigate('/home');
+
+    setLoading(true);
+    setError('');
+
+    const result = await login(email, password);
+
+    if (result.success) {
+      navigate('/home');
+    } else {
+      setError(result.error || 'Login failed');
+      setLoading(false);
+    }
   };
 
   const goToCreateAccount = () => {
@@ -96,6 +110,12 @@ export default function MustangWrappedLogin() {
           </div>
 
           <div>
+            {error && (
+              <div style={styles.errorBanner}>
+                {error}
+              </div>
+            )}
+
             {/* Email Input */}
             <div style={styles.inputGroup}>
               <label className="pixel-font" style={styles.label}>
@@ -104,11 +124,15 @@ export default function MustangWrappedLogin() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError('');
+                }}
                 onKeyPress={handleKeyPress}
                 placeholder="enter your email"
                 className="login-input"
                 style={styles.input}
+                disabled={loading}
               />
             </div>
 
@@ -120,25 +144,34 @@ export default function MustangWrappedLogin() {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError('');
+                }}
                 onKeyPress={handleKeyPress}
                 placeholder="enter your password"
                 className="login-input"
                 style={styles.input}
+                disabled={loading}
               />
             </div>
 
             {/* Login Button */}
             <button
               onClick={handleSubmit}
-              style={styles.submitButton}
-              onMouseEnter={(e) => e.target.style.backgroundColor = '#f3e8ff'}
-              onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+              disabled={loading}
+              style={{
+                ...styles.submitButton,
+                opacity: loading ? 0.6 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }}
+              onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#f3e8ff')}
+              onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = 'white')}
             >
               <span style={{...styles.horseIcon, width: '30px', height: '30px', marginRight: '10px'}}>
                 <img src="src\assets\images\WesternMustangLogo1.svg" alt="Western Logo" style={styles.iconImage} />
               </span>
-                Login
+              {loading ? 'Logging in...' : 'Login'}
             </button>
 
             {/* New Here Button */}
@@ -241,6 +274,15 @@ const styles = {
     textTransform: "uppercase",
     paintOrder: "stroke fill",
     letterSpacing: "0.4em",
+  },
+  errorBanner: {
+    backgroundColor: '#ef4444',
+    color: 'white',
+    padding: '12px',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    fontSize: '14px',
+    textAlign: 'center',
   },
   inputGroup: {
     marginBottom: '25px',
