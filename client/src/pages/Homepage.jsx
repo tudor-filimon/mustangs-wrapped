@@ -72,7 +72,7 @@ function HomePage() {
 
         {/* ROW 2 - STRAIGHT LINE */}
         <div className="row middle-row">
-          <button className="pill-btn side-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\Account.svg" alt="Account Icon" />Account</button>
+          <button className="pill-btn side-btn" onClick={() => navigate('/profile')}><img src="src\assets\images\Account.svg" alt="Account Icon" />Account</button>
 
     {/*Wrapped Sign in the middle. Each individual letter in a span so i can put hover effect animations on them  */}
           <h1 className="title">
