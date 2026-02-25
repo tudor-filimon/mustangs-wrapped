@@ -78,6 +78,7 @@ class ApiClient {
     });
   }
 
+  // To use in dashboard for user name
   async getCurrentUser() {
     return this.request('/api/auth/me');
   }

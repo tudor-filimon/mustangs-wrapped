@@ -4,6 +4,7 @@ import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
 import sunIcon from '../assets/images/sunIcon.svg';
 import moonIcon from '../assets/images/moonIcon.svg';
+import { useAuth } from '../context/AuthContext';
 
 function HomePage() {
   // Toggle this to see the Light/Dark mode changes
@@ -12,6 +13,9 @@ function HomePage() {
   const [showWfnModal, setShowWfnModal] = useState(false);
   
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const name = user?.display_name || user?.displayName || user?.email || 'Guest';
+  const avatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
 
   return (
     <div className={`home-container ${theme} page-transition`}>
@@ -46,9 +50,17 @@ function HomePage() {
           </div>
       
 
-        <div className="header-center">
-          <h2>Hi, Username</h2>
-        </div>
+          <div className="header-center">
+              <div className="profile-pic-container">
+                <img
+                  src={avatar}
+                  alt="avatar"
+                  className="profile-pic"
+                />
+              </div>
+              <h2>Hi, {name}</h2>
+            </div>
+        
 
         <div className="header-right">
           {/* Added onClick sets the modal state to true to open the modal */}
