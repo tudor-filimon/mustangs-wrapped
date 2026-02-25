@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../App.css'; // Make sure this points to your CSS file
 
 function ProfilePage() {
-  // Simple navigation handler to go back to home
+  const navigate = useNavigate();
+
   const handleBack = () => {
-    window.location.reload(); // Or use your router's navigation method
+    navigate('/home');
   };
 
   return (
