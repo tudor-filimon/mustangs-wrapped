@@ -49,7 +49,7 @@ function HomePage() {
             <input type="text" placeholder="Find what Mustangs are listening to" />
           </div>
       
-
+{/* Integrated with backend by using AuthContext.jsx file */}
           <div className="header-center">
               <div className="profile-pic-container">
                 <img
