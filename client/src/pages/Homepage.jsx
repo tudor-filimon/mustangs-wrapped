@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
 import sunIcon from '../assets/images/sunIcon.svg';
 import moonIcon from '../assets/images/moonIcon.svg';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 function HomePage() {
   // Toggle this to see the Light/Dark mode changes
@@ -12,10 +13,28 @@ function HomePage() {
   // State for the WFN Modal
   const [showWfnModal, setShowWfnModal] = useState(false);
   
+  
   const navigate = useNavigate();
   const { user } = useAuth();
   const name = user?.display_name || user?.displayName || user?.email || 'Guest';
   const avatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
+  
+  const [nowPlaying, setNowPlaying] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchNow = async () => {
+      try {
+        const data = await api.getCurrentPlaying(); // ensure you added this method to api.js
+        if (mounted) setNowPlaying(data);
+      } catch (e) {
+        console.error('NowPlaying fetch error', e);
+      }
+    };
+    fetchNow();
+    const id = setInterval(fetchNow, 15000); // poll every 15s
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
 
   return (
     <div className={`home-container ${theme} page-transition`}>
@@ -104,22 +123,31 @@ function HomePage() {
       </main>
 
       {/* === FOOTER === */}
+    {nowPlaying?.playing ? (
       <div className="now-playing">
         <div className="np-left">Now Playing:</div>
+
         <div className="np-center">
           <div className="visualizer-container">
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
-            <div className="bar"></div>
+            <div className="bar"></div><div className="bar"></div><div className="bar"></div><div className="bar"></div><div className="bar"></div>
           </div>
         </div>
+
         <div className="np-right">
-          <span>Smoking out the Window</span>
-          <div className="album-art"><img src="src\assets\images\albumArtIcon.svg" alt="Album Art" /></div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            {nowPlaying.image && (
+              <div className="album-art">
+                <img src={nowPlaying.image} alt={nowPlaying.song} style={{width:48,height:48,objectFit:'cover'}} />
+              </div>
+            )}
+            <div style={{display:'flex',flexDirection:'column'}}>
+              <span style={{fontWeight:700}}>{nowPlaying.song}</span>
+              <span style={{fontSize:12,color:'#ccc'}}>{nowPlaying.artists}</span>
+            </div>
+          </div>
         </div>
       </div>
+    ) : null}
 
     </div>
   );

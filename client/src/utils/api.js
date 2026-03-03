@@ -95,6 +95,10 @@ class ApiClient {
       method: 'GET'
     });
   }
+
+  async getCurrentPlaying() {
+    return this.request('/api/spotify/current-playing');
+  }
 }
 
 export default new ApiClient();

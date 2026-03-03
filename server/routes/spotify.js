@@ -1,6 +1,6 @@
 import express from 'express';
 import axios from 'axios';
-import { supabaseAdmin } from '../config/supabase.js';
+import { supabase, supabaseAdmin } from '../config/supabase.js';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -164,6 +164,83 @@ router.get('/temp-token/:token', (req, res) => {
     spotifyUserId: tokenData.spotifyUserId,
     valid: true
   });
+});
+
+// GET /api/spotify/current-playing
+router.get('/current-playing', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) return res.status(401).json({ error: 'Invalid token' });
+
+    // find linked spotify account
+    const { data: spotifyAccount } = await supabaseAdmin
+      .from('spotify_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+    if (!spotifyAccount) return res.status(404).json({ error: 'No linked Spotify account' });
+
+    // get tokens
+    const { data: tokenRow } = await supabaseAdmin
+      .from('spotify_tokens')
+      .select('id, access_token_encrypted, refresh_token_encrypted, expires_at')
+      .eq('spotify_acc_id', spotifyAccount.id)
+      .single();
+
+    if (!tokenRow) return res.status(404).json({ error: 'No Spotify tokens' });
+
+    let accessToken = tokenRow.access_token_encrypted;
+    const refreshToken = tokenRow.refresh_token_encrypted;
+    const expiresAt = tokenRow.expires_at ? new Date(tokenRow.expires_at).getTime() : 0;
+
+    // refresh if expired (60s leeway)
+    if (!accessToken || Date.now() >= (expiresAt - 60000)) {
+      const params = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: process.env.SPOTIFY_CLIENT_ID,
+        client_secret: process.env.SPOTIFY_CLIENT_SECRET
+      });
+      const tokenResp = await axios.post('https://accounts.spotify.com/api/token', params.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      accessToken = tokenResp.data.access_token;
+      const newExpiresAt = new Date(Date.now() + tokenResp.data.expires_in * 1000).toISOString();
+      await supabaseAdmin.from('spotify_tokens').update({
+        access_token_encrypted: accessToken,
+        expires_at: newExpiresAt
+      }).eq('id', tokenRow.id);
+    }
+
+    // call Spotify currently-playing
+    const spotifyResp = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (spotifyResp.status === 204) return res.json({ playing: false });
+
+    const data = spotifyResp.data;
+    const item = data.item;
+    if (!item) return res.json({ playing: false });
+
+    const song = item.name;
+    const artists = item.artists?.map(a => a.name).join(', ') || '';
+    const image = item.album?.images?.[0]?.url || null;
+
+    res.json({
+      playing: true,
+      song,
+      artists,
+      image,
+      progress_ms: data.progress_ms,
+      duration_ms: item.duration_ms
+    });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;

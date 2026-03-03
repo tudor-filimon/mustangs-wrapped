@@ -3,7 +3,7 @@ import './App.css'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
-// Allpages that are being used are imported here
+// All pages that are being used are imported here
 import HomePage from './pages/Homepage.jsx'
 import MustangWrapped from './pages/wrappedScreen.jsx'
 import PlaylistView from './pages/playlistScreen.jsx'
@@ -19,9 +19,13 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<MustangWrappedLogin />} />
-          <Route path="/register-complete" element={<RegisterComplete />} />
 
           {/* Protected routes */}
+          <Route path="/register-complete" element={
+            <ProtectedRoute>
+              <RegisterComplete />
+            </ProtectedRoute>
+          } />
           <Route path="/home" element={
             <ProtectedRoute>
               <HomePage />
