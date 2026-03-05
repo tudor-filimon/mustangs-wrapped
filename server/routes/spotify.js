@@ -170,27 +170,56 @@ router.get('/temp-token/:token', (req, res) => {
 router.get('/current-playing', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
+    if (!authHeader?.startsWith('Bearer ')) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] No Bearer token in Authorization header');
+      return res.status(401).json({ error: 'No token' });
+    }
     const token = authHeader.substring(7);
     const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
-    if (getUserErr || !user) return res.status(401).json({ error: 'Invalid token' });
+    if (getUserErr || !user) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] Auth failed:', getUserErr?.message || 'No user');
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    // LOGGING FOR TESTING
+    console.log('[current-playing] User resolved:', user.id);
 
     // find linked spotify account
-    const { data: spotifyAccount } = await supabaseAdmin
+    const { data: spotifyAccount, error: spotifyAccountError } = await supabaseAdmin
       .from('spotify_accounts')
       .select('id')
       .eq('user_id', user.id)
       .single();
-    if (!spotifyAccount) return res.status(404).json({ error: 'No linked Spotify account' });
+    if (spotifyAccountError) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] spotify_accounts query error:', spotifyAccountError.code, spotifyAccountError.message);
+    }
+    if (!spotifyAccount) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] No spotify_accounts row for user_id:', user.id);
+      return res.status(404).json({ error: 'No linked Spotify account' });
+    }
+    console.log('[current-playing] spotify_accounts row found, id:', spotifyAccount.id);
 
-    // get tokens
-    const { data: tokenRow } = await supabaseAdmin
+    // get tokens (table PK is spotify_acc_id, not id)
+    const { data: tokenRow, error: tokenError } = await supabaseAdmin
       .from('spotify_tokens')
-      .select('id, access_token_encrypted, refresh_token_encrypted, expires_at')
+      .select('spotify_acc_id, access_token_encrypted, refresh_token_encrypted, expires_at')
       .eq('spotify_acc_id', spotifyAccount.id)
       .single();
 
-    if (!tokenRow) return res.status(404).json({ error: 'No Spotify tokens' });
+    if (tokenError) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] spotify_tokens query error:', tokenError.code, tokenError.message);
+    }
+    if (!tokenRow) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] No spotify_tokens row for spotify_acc_id:', spotifyAccount.id);
+      return res.status(404).json({ error: 'No Spotify tokens' });
+    }
+    // LOGGING FOR TESTING
+    console.log('[current-playing] spotify_tokens row found, spotify_acc_id:', tokenRow.spotify_acc_id);
 
     let accessToken = tokenRow.access_token_encrypted;
     const refreshToken = tokenRow.refresh_token_encrypted;
@@ -198,6 +227,8 @@ router.get('/current-playing', async (req, res, next) => {
 
     // refresh if expired (60s leeway)
     if (!accessToken || Date.now() >= (expiresAt - 60000)) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] Refreshing access token');
       const params = new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
@@ -212,15 +243,21 @@ router.get('/current-playing', async (req, res, next) => {
       await supabaseAdmin.from('spotify_tokens').update({
         access_token_encrypted: accessToken,
         expires_at: newExpiresAt
-      }).eq('id', tokenRow.id);
+      }).eq('spotify_acc_id', tokenRow.spotify_acc_id);
     }
 
     // call Spotify currently-playing
+    // LOGGING FOR TESTING
+    console.log('[current-playing] Calling Spotify API for currently-playing');
     const spotifyResp = await axios.get('https://api.spotify.com/v1/me/player/currently-playing', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
-    if (spotifyResp.status === 204) return res.json({ playing: false });
+    if (spotifyResp.status === 204) {
+      // LOGGING FOR TESTING
+      console.log('[current-playing] Spotify: nothing playing');
+      return res.json({ playing: false });
+    }
 
     const data = spotifyResp.data;
     const item = data.item;
@@ -230,6 +267,7 @@ router.get('/current-playing', async (req, res, next) => {
     const artists = item.artists?.map(a => a.name).join(', ') || '';
     const image = item.album?.images?.[0]?.url || null;
 
+    console.log('[current-playing] Success:', song, '-', artists);
     res.json({
       playing: true,
       song,
@@ -239,6 +277,8 @@ router.get('/current-playing', async (req, res, next) => {
       duration_ms: item.duration_ms
     });
   } catch (err) {
+    // LOGGING FOR TESTING
+    console.error('[current-playing] Unexpected error:', err.message);
     next(err);
   }
 });
