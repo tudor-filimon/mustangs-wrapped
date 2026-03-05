@@ -154,3 +154,60 @@ CREATE INDEX idx_wrapped_items_snapshot ON public.wrapped_items(snapshot_id);
 CREATE INDEX idx_users_class_year ON public.users(class_year);
 CREATE INDEX idx_users_faculty ON public.users(faculty);
 CREATE INDEX idx_users_major ON public.users(major);
+
+-- ============================================
+-- Friends Feature
+-- ============================================
+
+-- 6. Friend Requests table
+CREATE TABLE public.friend_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  receiver_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (sender_id, receiver_id)
+);
+
+-- 7. Friends table (mutual friendships)
+CREATE TABLE public.friends (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user1_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user2_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user1_id, user2_id),
+  CHECK (user1_id < user2_id)
+);
+
+-- RLS for friend_requests
+ALTER TABLE public.friend_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can send friend requests"
+  ON public.friend_requests FOR INSERT
+  WITH CHECK (auth.uid() = sender_id);
+
+CREATE POLICY "Users can see requests they sent or received"
+  ON public.friend_requests FOR SELECT
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+CREATE POLICY "Receivers can update (accept/decline) requests"
+  ON public.friend_requests FOR UPDATE
+  USING (auth.uid() = receiver_id);
+
+-- RLS for friends
+ALTER TABLE public.friends ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view friendships they are in"
+  ON public.friends FOR SELECT
+  USING (auth.uid() = user1_id OR auth.uid() = user2_id);
+
+CREATE POLICY "Users can insert friendship when accepting request"
+  ON public.friends FOR INSERT
+  WITH CHECK (auth.uid() = user1_id OR auth.uid() = user2_id);
+
+-- Indexes for friends queries
+CREATE INDEX idx_friend_requests_sender ON public.friend_requests(sender_id);
+CREATE INDEX idx_friend_requests_receiver ON public.friend_requests(receiver_id);
+CREATE INDEX idx_friend_requests_status ON public.friend_requests(status);
+CREATE INDEX idx_friends_user1 ON public.friends(user1_id);
+CREATE INDEX idx_friends_user2 ON public.friends(user2_id);

@@ -111,7 +111,7 @@ function HomePage() {
             <span> </span><span>W</span><span>r</span><span>a</span><span>p</span><span>p</span><span>e</span><span>d</span>
             </h1>
           
-          <button className="pill-btn side-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends</button>
+          <button className="pill-btn side-btn" onClick={() => navigate('/friends')}><img src="src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends</button>
         </div>
 
         {/* ROW 3 */}

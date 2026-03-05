@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import spotifyRoutes from './routes/spotify.js';
+import friendsRoutes from './routes/friends.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -22,6 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/spotify', spotifyRoutes);
+app.use('/api/friends', friendsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

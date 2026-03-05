@@ -1,24 +1,100 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+
+const defaultAvatar = '/src/assets/images/default-avatar.png';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const { userId } = useParams();
   const { user } = useAuth();
-  
-  const name = user?.display_name || user?.displayName || user?.email || 'Guest';
-  const avatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
+  const [profileUser, setProfileUser] = useState(null);
+  const [relationship, setRelationship] = useState(null);
+  const [loading, setLoading] = useState(!!userId);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  // Orbit Data
-  const userStats = {
-    faculty: user?.faculty || 'Unknown Faculty',
-    year: user?.classYear || user?.class_year || 'Unknown Year',
-    major: user?.major || 'Undeclared'
+  const isViewingOther = userId && user?.id && userId !== user.id;
+
+  useEffect(() => {
+    if (!isViewingOther) {
+      setProfileUser(null);
+      setRelationship(null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    api.getUserProfile(userId)
+      .then((data) => {
+        if (!cancelled) {
+          setProfileUser(data.user);
+          setRelationship({
+            isSelf: data.isSelf,
+            areFriends: data.areFriends,
+            requestStatus: data.requestStatus,
+            requestId: data.requestId
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setProfileUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [userId, isViewingOther]);
+
+  const handleAddFriend = async () => {
+    if (actionLoading || !profileUser) return;
+    setActionLoading(true);
+    try {
+      await api.sendFriendRequest(profileUser.id);
+      setRelationship((r) => ({ ...r, requestStatus: 'sent' }));
+    } catch (e) {
+      alert(e.message || 'Could not send request');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  // New Data
+  const handleAccept = async () => {
+    if (actionLoading || !relationship?.requestId) return;
+    setActionLoading(true);
+    try {
+      await api.acceptFriendRequest(relationship.requestId);
+      setRelationship((r) => ({ ...r, areFriends: true, requestStatus: 'none', requestId: null }));
+    } catch (e) {
+      alert(e.message || 'Could not accept');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (actionLoading || !relationship?.requestId) return;
+    setActionLoading(true);
+    try {
+      await api.declineFriendRequest(relationship.requestId);
+      setRelationship((r) => ({ ...r, requestStatus: 'none', requestId: null }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const displayUser = isViewingOther ? profileUser : user;
+  const name = displayUser?.display_name || displayUser?.displayName || displayUser?.email || 'Guest';
+  const avatar = displayUser?.avatar_url || defaultAvatar;
+
+  const userStats = {
+    faculty: displayUser?.faculty || 'Unknown Faculty',
+    year: displayUser?.classYear || displayUser?.class_year || 'Unknown Year',
+    major: displayUser?.major || 'Undeclared'
+  };
+
   const listeningStats = {
     totalSongs: 420,
     hoursListened: 67,
@@ -114,14 +190,50 @@ export default function ProfilePage() {
 
       {/* Header */}
       <header style={styles.header}>
-        <button style={styles.backButton} onClick={() => navigate('/home')}>
+        <button style={styles.backButton} onClick={() => navigate(isViewingOther ? '/friends' : '/home')}>
           ← Back
         </button>
       </header>
 
-      {/* Main Content (Scrollable) */}
+      {loading && isViewingOther && (
+        <main style={styles.mainContent}>
+          <p style={{ color: '#d8b4fe' }}>Loading profile...</p>
+        </main>
+      )}
+      {isViewingOther && !loading && !profileUser && (
+        <main style={styles.mainContent}>
+          <p style={{ color: '#d8b4fe' }}>User not found.</p>
+        </main>
+      )}
+      {(!isViewingOther || profileUser) && !loading && (
       <main style={styles.mainContent}>
-        
+        {/* Relationship actions when viewing another user */}
+        {isViewingOther && relationship && (
+          <div style={styles.friendActions}>
+            {relationship.areFriends && (
+              <span style={styles.friendBadge}>Friends</span>
+            )}
+            {relationship.requestStatus === 'sent' && (
+              <span style={styles.friendBadge}>Request sent</span>
+            )}
+            {relationship.requestStatus === 'received' && (
+              <>
+                <button style={{ ...styles.actionBtn, background: '#22c55e' }} onClick={handleAccept} disabled={actionLoading}>
+                  Accept
+                </button>
+                <button style={{ ...styles.actionBtn, background: 'rgba(255,255,255,0.2)' }} onClick={handleDecline} disabled={actionLoading}>
+                  Decline
+                </button>
+              </>
+            )}
+            {relationship.requestStatus === 'none' && !relationship.areFriends && (
+              <button style={{ ...styles.actionBtn, background: '#a78bfa', color: '#1f1041' }} onClick={handleAddFriend} disabled={actionLoading}>
+                {actionLoading ? 'Sending...' : 'Add friend'}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Personalized Title */}
         <h1 style={styles.pageTitle}>{name.split(' ')[0]}</h1>
 
@@ -188,6 +300,7 @@ export default function ProfilePage() {
         </div>
 
       </main>
+      )}
     </div>
   );
 }
@@ -326,5 +439,29 @@ const styles = {
     fontWeight: '600',
     fontSize: '14px',
     color: '#d8b4fe',
-  }
+  },
+  friendActions: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: '20px',
+    flexWrap: 'wrap',
+  },
+  friendBadge: {
+    padding: '10px 20px',
+    borderRadius: '9999px',
+    background: 'rgba(167, 139, 250, 0.3)',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+  },
+  actionBtn: {
+    padding: '10px 20px',
+    borderRadius: '9999px',
+    border: 'none',
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+  },
 };

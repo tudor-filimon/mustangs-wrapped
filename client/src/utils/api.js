@@ -99,6 +99,51 @@ class ApiClient {
   async getCurrentPlaying() {
     return this.request('/api/spotify/current-playing');
   }
+
+  // Friends endpoints
+  async searchUsers(query) {
+    const q = encodeURIComponent(query || '');
+    return this.request(`/api/friends/users/search?q=${q}`);
+  }
+
+  async sendFriendRequest(receiverId) {
+    return this.request('/api/friends/requests', {
+      method: 'POST',
+      body: JSON.stringify({ receiver_id: receiverId })
+    });
+  }
+
+  async getFriendRequests() {
+    return this.request('/api/friends/requests');
+  }
+
+  async acceptFriendRequest(requestId) {
+    return this.request(`/api/friends/requests/${requestId}/accept`, {
+      method: 'POST'
+    });
+  }
+
+  async declineFriendRequest(requestId) {
+    return this.request(`/api/friends/requests/${requestId}/decline`, {
+      method: 'POST'
+    });
+  }
+
+  async getFriends() {
+    return this.request('/api/friends');
+  }
+
+  async getFriendsActivity() {
+    return this.request('/api/friends/activity');
+  }
+
+  async getFriendStatus(userId) {
+    return this.request(`/api/friends/check/${encodeURIComponent(userId)}`);
+  }
+
+  async getUserProfile(userId) {
+    return this.request(`/api/friends/profile/${encodeURIComponent(userId)}`);
+  }
 }
 
 export default new ApiClient();
