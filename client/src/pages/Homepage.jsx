@@ -12,6 +12,7 @@ function HomePage() {
   const [theme, setTheme] = useState('dark'); 
   // State for the WFN Modal
   const [showWfnModal, setShowWfnModal] = useState(false);
+  const [showAlbumModal, setShowAlbumModal] = useState(false);
   
   
   const navigate = useNavigate();
@@ -46,6 +47,21 @@ function HomePage() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <button className="close-modal-btn" onClick={() => setShowWfnModal(false)}>✕</button>
             <img src="src\assets\images\teamPhoto.JPEG" alt="Projects Group of people" />
+          </div>
+        </div>
+      )}
+{/* Album Click Modal */}
+      {showAlbumModal && nowPlaying && (
+        <div className="modal-overlay" onClick={() => setShowAlbumModal(false)}>
+          <div className="modal-content" style={{ textAlign: 'center', padding: '30px' }} onClick={(e) => e.stopPropagation()}>
+            <button className="close-modal-btn" onClick={() => setShowAlbumModal(false)}>✕</button>
+            <img 
+              src={nowPlaying.image} 
+              alt={nowPlaying.song} 
+              style={{ width: '100%', maxWidth: '300px', height: 'auto', borderRadius: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }} 
+            />
+            <h2 style={{ marginTop: '20px', color: 'white', fontSize: '24px' }}>{nowPlaying.song}</h2>
+            <p style={{ color: '#ccc', fontSize: '16px', marginTop: '5px' }}>{nowPlaying.artists}</p>
           </div>
         </div>
       )}
@@ -136,8 +152,14 @@ function HomePage() {
         <div className="np-right">
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             {nowPlaying.image && (
-              <div className="album-art">
-                <img src={nowPlaying.image} alt={nowPlaying.song} style={{width:48,height:48,objectFit:'cover'}} />
+              <div 
+                className="album-art" 
+                onClick={() => setShowAlbumModal(true)} 
+                style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <img src={nowPlaying.image} alt={nowPlaying.song} style={{width:48,height:48,objectFit:'cover', borderRadius: '4px'}} />
               </div>
             )}
             <div style={{display:'flex',flexDirection:'column'}}>
