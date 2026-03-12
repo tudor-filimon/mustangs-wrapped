@@ -285,7 +285,7 @@ router.get('/current-playing', async (req, res, next) => {
 
 /**
  * GET /api/spotify/top-tracks
- * Fetches the user's top 20 tracks from Spotify (short_term = ~4 weeks).
+ * Fetches the user's top 50 tracks from Spotify (short_term = ~4 weeks).
  * Query: time_range = short_term | medium_term | long_term (optional, default short_term).
  */
 router.get('/top-tracks', async (req, res, next) => {
@@ -344,7 +344,7 @@ router.get('/top-tracks', async (req, res, next) => {
 
     const timeRange = req.query.time_range || 'short_term';
     const spotifyResp = await axios.get(
-      `https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=${timeRange}`,
+      `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=${timeRange}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     );
 
@@ -358,12 +358,12 @@ router.get('/top-tracks', async (req, res, next) => {
       duration_ms: t.duration_ms || null
     }));
 
-    console.log('[top-tracks] Top 20 tracks for user', user.id);
+    console.log('[top-tracks] Top tracks for user', user.id);
     tracks.forEach((t, i) => console.log(`  ${i + 1}. ${t.name} – ${t.artists}`));
 
-    // Save top 20 tracks to Supabase
-    const top20 = tracks.slice(0, 20);
-    if (top20.length > 0) {
+    // Save top 50 tracks to Supabase
+    const top50 = tracks.slice(0, 50);
+    if (top50.length > 0) {
       const year = new Date().getFullYear();
       const { data: snapshot, error: snapErr } = await supabaseAdmin
         .from('wrapped_snapshot')
@@ -388,7 +388,7 @@ router.get('/top-tracks', async (req, res, next) => {
           .eq('snapshot_id', snapshot.id)
           .eq('item_type', 'track');
 
-        const itemsToInsert = top20.map((t) => ({
+        const itemsToInsert = top50.map((t) => ({
           snapshot_id: snapshot.id,
           item_type: 'track',
           spotify_id: t.spotify_id,
@@ -404,7 +404,7 @@ router.get('/top-tracks', async (req, res, next) => {
         if (insertErr) {
           console.error('[top-tracks] wrapped_items insert error:', insertErr.message);
         } else {
-          console.log('[top-tracks] Saved top 20 tracks to Supabase for snapshot', snapshot.id);
+          console.log('[top-tracks] Saved top 50 tracks to Supabase for snapshot', snapshot.id);
         }
       }
     }
@@ -472,8 +472,8 @@ router.get('/wrapped-top-tracks', async (req, res, next) => {
 
 /**
  * GET /api/spotify/global-top-tracks
- * Returns the top 20 tracks across all users, ranked by an approximate
- * total listen-time proxy derived from duration_ms and rank.
+ * Returns the top 50 tracks across all users, ranked by total duration_ms
+ * accumulated in wrapped_items.
  *
  * NOTE: This uses stored wrapped_items snapshots; it does not query Spotify
  * directly and does not represent exact play counts from Spotify.
@@ -512,9 +512,9 @@ router.get('/global-top-tracks', async (req, res, next) => {
     const allTracks = Array.from(statsMap.values());
     allTracks.sort((a, b) => (b.total_duration_ms || 0) - (a.total_duration_ms || 0));
 
-    const top20 = allTracks.slice(0, 20);
+    const top50 = allTracks.slice(0, 50);
 
-    res.json({ tracks: top20 });
+    res.json({ tracks: top50 });
   } catch (err) {
     console.error('[global-top-tracks] Error:', err.message);
     next(err);

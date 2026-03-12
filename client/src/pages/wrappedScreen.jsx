@@ -124,7 +124,7 @@ export default function MustangWrapped() {
   useEffect(() => {
     api.getTopTracks('medium_term')
       .then((data) => {
-        console.log('Top 20 tracks:', data.tracks);
+        console.log('Top tracks:', data.tracks);
         if (data.tracks?.length) setTopTracks(data.tracks);
         data.tracks?.forEach((t, i) => {
           console.log(`${i + 1}. ${t.name} – ${t.artists}`);
@@ -144,14 +144,14 @@ export default function MustangWrapped() {
       });
   }, []);
 
-  const top20Songs = topTracks.slice(0, 20).map((t) => ({
+  const top50Songs = topTracks.slice(0, 50).map((t) => ({
     id: t.spotify_id,
     title: t.name,
     album: t.artists,
     imageUrl: t.image
   }));
 
-  const globalTop20Songs = globalTopTracks.slice(0, 20).map((t, index) => ({
+  const globalTop50Songs = globalTopTracks.slice(0, 50).map((t, index) => ({
     id: t.spotify_id || index + 1,
     title: t.name,
     album: '',
@@ -159,8 +159,8 @@ export default function MustangWrapped() {
   }));
 
   const wrappedItems = [
-    { id: 1, title: 'Your Top 20 Tracks', isTop20Playlist: true },
-    { id: 2, title: 'Campus Top 20 Tracks', isGlobalTop20Playlist: true },
+    { id: 1, title: 'Your Top 50 Tracks', isTop50Playlist: true },
+    { id: 2, title: 'Campus Top 50 Tracks', isGlobalTop50Playlist: true },
     { id: 3, title: 'Wrapped Thing #3' },
     { id: 4, title: 'Wrapped Thing #4' },
     { id: 5, title: 'Wrapped Thing #5' },
@@ -208,13 +208,13 @@ export default function MustangWrapped() {
                   <div style={styles.imagePlaceholder}></div>
                   
                   {/* View Playlist Button */}
-                  <button 
-                    style={styles.playlistButton}
-                    onClick={() => navigate('/playlist', {
-                      state: item.isTop20Playlist
-                        ? { playlistName: 'Your Top 20 Tracks', songs: top20Songs }
-                        : item.isGlobalTop20Playlist
-                          ? { playlistName: 'Campus Top 20 Tracks', songs: globalTop20Songs }
+                    <button 
+                      style={styles.playlistButton}
+                      onClick={() => navigate('/playlist', {
+                      state: item.isTop50Playlist
+                        ? { playlistName: 'Your Top 50 Tracks', songs: top50Songs }
+                        : item.isGlobalTop50Playlist
+                          ? { playlistName: 'Campus Top 50 Tracks', songs: globalTop50Songs }
                           : undefined
                     })}
                   >

@@ -33,7 +33,7 @@ export default function PlaylistView() {
     api.getWrappedTopTracks()
       .then((data) => {
         if (data.tracks?.length) {
-          setPlaylistName('Your Top 20 Tracks');
+          setPlaylistName('Your Top 50 Tracks');
           setSongs(data.tracks.map((t, i) => ({
             id: t.rank || i + 1,
             title: t.name,
