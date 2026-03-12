@@ -16,7 +16,31 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(!!userId);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // NEW: State to track which stat modal is currently open
+  const [activeModal, setActiveModal] = useState(null);
+
   const isViewingOther = userId && user?.id && userId !== user.id;
+
+  const [spotifyStats, setSpotifyStats] = useState(null);
+  const [spotifyLoading, setSpotifyLoading] = useState(false);
+  const [spotifyError, setSpotifyError] = useState(null);
+
+  useEffect(() => {
+    if (isViewingOther) return;
+
+    let cancelled = false;
+    setSpotifyLoading(true);
+    api.getSpotifyStats()
+      .then((data) => {
+        if (!cancelled) setSpotifyStats(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setSpotifyError(err.message || 'Could not load Spotify stats');
+      })
+      .finally(() => { if (!cancelled) setSpotifyLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [isViewingOther]);
 
   useEffect(() => {
     if (!isViewingOther) {
@@ -95,18 +119,113 @@ export default function ProfilePage() {
     major: displayUser?.major || 'Undeclared'
   };
 
-  const listeningStats = {
-    totalSongs: 420,
-    hoursListened: 67,
-    uniqueArtists: 1,
-    artistOfMonth: "Chopin"
-  };
+  const listeningStats = (() => {
+    if (!spotifyStats) {
+      return {
+        obsessionLevel: '—',
+        attentionSpan: '—',
+        currentAnthem: '—',
+        artistOfMonth: '—',
+        rawObsessionInt: 0
+      };
+    }
 
-  const topTracks = [
+    const topArtistName = spotifyStats.topArtists?.[0]?.name || '';
+    const topTracksArr = spotifyStats.topTracks || [];
+    
+    // Obsession Level
+    let matchCount = 0;
+    if (topArtistName && topTracksArr.length > 0) {
+      topTracksArr.forEach(track => {
+        if (track.artists && track.artists.includes(topArtistName)) {
+          matchCount++;
+        }
+      });
+    }
+    const rawObsessionInt = topTracksArr.length > 0 ? Math.round((matchCount / topTracksArr.length) * 100) : 0;
+    const obsessionLevel = topTracksArr.length > 0 && topArtistName 
+      ? `${rawObsessionInt}%` 
+      : '—';
+
+    // Attention Span
+    const tracksWithDuration = topTracksArr.filter(t => t.duration_ms);
+    let attentionSpan = '—';
+    if (tracksWithDuration.length > 0) {
+      const totalMs = tracksWithDuration.reduce((acc, t) => acc + t.duration_ms, 0);
+      const avgDurationMs = totalMs / tracksWithDuration.length;
+      const mins = Math.floor(avgDurationMs / 60000);
+      const secs = ((avgDurationMs % 60000) / 1000).toFixed(0);
+      attentionSpan = `${mins}m ${secs.padStart(2, '0')}s`;
+    }
+
+    const currentAnthem = spotifyStats.topTracks?.[0]?.name || '—';
+
+    return {
+      obsessionLevel,
+      attentionSpan,
+      currentAnthem,
+      artistOfMonth: topArtistName || '—',
+      rawObsessionInt
+    };
+  })();
+
+  const topTracks = spotifyStats?.topTracks?.slice(0, 3).map(t => ({
+    title: t.name || t.title,
+    artist: t.artists || t.artist || ''
+  })) || [
     { title: "I'll Be Missing You", artist: "Diddy" },
     { title: "Nocturnes (Op. 9 No. 2 in E-Flat Major)", artist: "Chopin" },
     { title: "Santa Claus is Comin' to Town", artist: "Santa Claus (Ft. Elves & Ms. Claus)" }
   ];
+
+  // Helper function to render modal content dynamically
+  const renderModalContent = () => {
+    switch(activeModal) {
+      case 'obsession':
+        return (
+          <>
+            <h3 style={styles.modalHeader}>Obsession Level</h3>
+            <p style={styles.modalText}>
+              Your music taste is <strong>{listeningStats.obsessionLevel}</strong> obsessed with <strong>{listeningStats.artistOfMonth}</strong>. 
+              {listeningStats.rawObsessionInt > 15 
+                ? " You've practically got them on loop. We respect the dedication." 
+                : " You like to keep your rotation beautifully diverse!"}
+            </p>
+          </>
+        );
+      case 'attention':
+        return (
+          <>
+            <h3 style={styles.modalHeader}>Attention Span</h3>
+            <p style={styles.modalText}>
+              On average, your favorite songs are exactly <strong>{listeningStats.attentionSpan}</strong> long. 
+              Whether you prefer quick, punchy pop anthems or long, immersive masterpieces, this is your sonic sweet spot!
+            </p>
+          </>
+        );
+      case 'anthem':
+        return (
+          <>
+            <h3 style={styles.modalHeader}>Current Anthem</h3>
+            <p style={styles.modalText}>
+              Right now, you simply cannot get enough of <strong>{listeningStats.currentAnthem}</strong>. 
+              It is currently the #1 most played track in your heavy rotation. Turn it up!
+            </p>
+          </>
+        );
+      case 'artist':
+        return (
+          <>
+            <h3 style={styles.modalHeader}>Top Artist</h3>
+            <p style={styles.modalText}>
+              Out of all the artists in the entire world, <strong>{listeningStats.artistOfMonth}</strong> holds the #1 spot in your heart (and in your headphones).
+            </p>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="home-container dark page-transition" style={styles.pageContainer}>
@@ -116,9 +235,10 @@ export default function ProfilePage() {
         @import url('https://fonts.googleapis.com/css2?family=Jersey+25&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-        /* Orbit Animations */
         @keyframes spin { 100% { transform: rotate(360deg); } }
         @keyframes counter-spin { 100% { transform: rotate(-360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
         
         .orbit-system {
           position: relative;
@@ -152,25 +272,24 @@ export default function ProfilePage() {
           white-space: nowrap;
         }
 
-        /* 3 Nodes positioned exactly 120 degrees apart */
         .node-top { top: -35px; left: calc(50% - 65px); }
         .node-bottom-right { bottom: 25px; right: -45px; }
         .node-bottom-left { bottom: 25px; left: -45px; }
 
-        /* Glassmorphism Cards */
         .glass-card {
           background: rgba(151, 53, 216, 0.15);
           backdrop-filter: blur(15px);
           border: 1px solid rgba(167, 139, 250, 0.4);
           border-radius: 20px;
           padding: 20px;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+          cursor: pointer; /* Makes it obvious it's clickable */
         }
         
         .glass-card:hover {
           transform: translateY(-3px);
-          box-shadow: 0 8px 25px rgba(147, 51, 234, 0.4);
-          border-color: #a78bfa;
+          box-shadow: 0 8px 25px rgba(147, 51, 234, 0.5);
+          border-color: #d8b4fe;
         }
 
         .stats-grid {
@@ -184,11 +303,63 @@ export default function ProfilePage() {
           display: flex;
           flex-direction: column;
           gap: 15px;
-          margin-bottom: 60px; /* Padding for the bottom of the page */
+          margin-bottom: 60px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 5, 30, 0.85);
+          backdrop-filter: blur(10px);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeOverlay 0.2s ease-out forwards;
+          padding: 20px;
+        }
+
+        .modal-content-box {
+          background: linear-gradient(135deg, rgba(91, 48, 133, 0.9), rgba(31, 16, 65, 0.95));
+          border: 2px solid #a78bfa;
+          border-radius: 24px;
+          padding: 40px 30px;
+          max-width: 450px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(188, 19, 254, 0.4);
+          position: relative;
+          animation: fadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .close-button {
+          position: absolute;
+          top: 15px;
+          right: 20px;
+          background: none;
+          border: none;
+          color: #d8b4fe;
+          font-size: 28px;
+          cursor: pointer;
+          transition: color 0.2s ease;
+        }
+        
+        .close-button:hover {
+          color: white;
         }
       `}</style>
 
-      {/* Header */}
+      {/* NEW: The Modal Overlay */}
+      {activeModal && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content-box" onClick={e => e.stopPropagation()}>
+            <button className="close-button" onClick={() => setActiveModal(null)}>×</button>
+            {renderModalContent()}
+          </div>
+        </div>
+      )}
+
       <header style={styles.header}>
         <button style={styles.backButton} onClick={() => navigate(isViewingOther ? '/friends' : '/home')}>
           ← Back
@@ -207,7 +378,6 @@ export default function ProfilePage() {
       )}
       {(!isViewingOther || profileUser) && !loading && (
       <main style={styles.mainContent}>
-        {/* Relationship actions when viewing another user */}
         {isViewingOther && relationship && (
           <div style={styles.friendActions}>
             {relationship.areFriends && (
@@ -234,10 +404,8 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Personalized Title */}
         <h1 style={styles.pageTitle}>{name.split(' ')[0]}</h1>
 
-        {/* === THE ORBIT SECTION === */}
         <div className="orbit-system">
           <div style={styles.centerProfile}>
             <div style={styles.avatarContainer}>
@@ -262,29 +430,32 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* === LISTENING STATS SECTION === */}
         <div style={styles.contentWrapper}>
           <h3 style={styles.sectionHeader}>Your Stats</h3>
+          
+          {/* UPDATED: Cards now have onClick events */}
           <div className="stats-grid">
-            <div className="glass-card">
-              <p style={styles.statLabel}>Total Songs</p>
-              <p style={styles.statValueBig}>{listeningStats.totalSongs}</p>
+            <div className="glass-card" onClick={() => setActiveModal('obsession')} title="Click for details!">
+              <p style={styles.statLabel}>Obsession Level</p>
+              <p style={styles.statValueBig}>{listeningStats.obsessionLevel}</p>
             </div>
-            <div className="glass-card">
-              <p style={styles.statLabel}>Hours Listened</p>
-              <p style={styles.statValueBig}>{listeningStats.hoursListened}</p>
+
+            <div className="glass-card" onClick={() => setActiveModal('attention')} title="Click for details!">
+              <p style={styles.statLabel}>Attention Span</p>
+              <p style={styles.statValueBig}>{listeningStats.attentionSpan}</p>
             </div>
-            <div className="glass-card">
-              <p style={styles.statLabel}>Unique Artists</p>
-              <p style={styles.statValueBig}>{listeningStats.uniqueArtists}</p>
+
+            <div className="glass-card" onClick={() => setActiveModal('anthem')} title="Click for details!">
+              <p style={styles.statLabel}>Current Anthem</p>
+              <p style={styles.statValueBig}>{listeningStats.currentAnthem}</p>
             </div>
-            <div className="glass-card">
+
+            <div className="glass-card" onClick={() => setActiveModal('artist')} title="Click for details!">
               <p style={styles.statLabel}>Top Artist</p>
               <p style={styles.statValueBig}>{listeningStats.artistOfMonth}</p>
             </div>
           </div>
 
-          {/* === TOP TRACKS SECTION === */}
           <h3 style={styles.sectionHeader}>Your Top Tracks</h3>
           <div className="tracks-list">
             {topTracks.map((track, index) => (
@@ -420,6 +591,7 @@ const styles = {
     alignItems: 'center',
     gap: '20px',
     padding: '15px 25px',
+    cursor: 'default', /* Top tracks shouldn't look clickable unless you want them to be later! */
   },
   trackNumber: {
     fontFamily: "'Press Start 2P', cursive",
@@ -464,4 +636,21 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
   },
+  // NEW: Styles for the modal text
+  modalHeader: {
+    fontFamily: "'Jersey 25', sans-serif",
+    fontSize: '40px',
+    color: 'white',
+    letterSpacing: '0.05em',
+    marginBottom: '15px',
+    textShadow: "0 0 15px #bc13fe",
+    marginTop: 0,
+  },
+  modalText: {
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '18px',
+    color: '#e9d5ff',
+    lineHeight: '1.6',
+    margin: 0,
+  }
 };

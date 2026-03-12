@@ -157,6 +157,18 @@ class ApiClient {
   async getUserProfile(userId) {
     return this.request(`/api/friends/profile/${encodeURIComponent(userId)}`);
   }
+
+    async getSpotifyTopTracks() {
+    return this.request('/api/spotify/top-tracks');
+  }
+
+  async getSpotifyTopArtists() {
+    return this.request('/api/spotify/top-artists');
+  }
+
+  async getSpotifyStats() {
+    return this.request('/api/spotify/stats');
+  }
 }
 
 export default new ApiClient();
