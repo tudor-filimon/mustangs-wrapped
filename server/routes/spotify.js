@@ -283,4 +283,189 @@ router.get('/current-playing', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/spotify/top-tracks
+ * Fetches the user's top 20 tracks from Spotify (short_term = ~4 weeks).
+ * Query: time_range = short_term | medium_term | long_term (optional, default short_term).
+ */
+router.get('/top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { data: spotifyAccount, error: spotifyAccountError } = await supabaseAdmin
+      .from('spotify_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (spotifyAccountError || !spotifyAccount) {
+      return res.status(404).json({ error: 'No linked Spotify account' });
+    }
+
+    const { data: tokenRow, error: tokenError } = await supabaseAdmin
+      .from('spotify_tokens')
+      .select('spotify_acc_id, access_token_encrypted, refresh_token_encrypted, expires_at')
+      .eq('spotify_acc_id', spotifyAccount.id)
+      .single();
+
+    if (tokenError || !tokenRow) {
+      return res.status(404).json({ error: 'No Spotify tokens' });
+    }
+
+    let accessToken = tokenRow.access_token_encrypted;
+    const refreshToken = tokenRow.refresh_token_encrypted;
+    const expiresAt = tokenRow.expires_at ? new Date(tokenRow.expires_at).getTime() : 0;
+
+    if (!accessToken || Date.now() >= (expiresAt - 60000)) {
+      const params = new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: process.env.SPOTIFY_CLIENT_ID,
+        client_secret: process.env.SPOTIFY_CLIENT_SECRET
+      });
+      const tokenResp = await axios.post('https://accounts.spotify.com/api/token', params.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      accessToken = tokenResp.data.access_token;
+      const newExpiresAt = new Date(Date.now() + tokenResp.data.expires_in * 1000).toISOString();
+      await supabaseAdmin.from('spotify_tokens').update({
+        access_token_encrypted: accessToken,
+        expires_at: newExpiresAt
+      }).eq('spotify_acc_id', tokenRow.spotify_acc_id);
+    }
+
+    const timeRange = req.query.time_range || 'short_term';
+    const spotifyResp = await axios.get(
+      `https://api.spotify.com/v1/me/top/tracks?limit=20&time_range=${timeRange}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    const items = spotifyResp.data?.items || [];
+    const tracks = items.map((t, i) => ({
+      rank: i + 1,
+      name: t.name,
+      artists: t.artists?.map(a => a.name).join(', ') || '',
+      image: t.album?.images?.[0]?.url || null,
+      spotify_id: t.id
+    }));
+
+    console.log('[top-tracks] Top 20 tracks for user', user.id);
+    tracks.forEach((t, i) => console.log(`  ${i + 1}. ${t.name} – ${t.artists}`));
+
+    // Save top 20 tracks to Supabase
+    const top20 = tracks.slice(0, 20);
+    if (top20.length > 0) {
+      const year = new Date().getFullYear();
+      const { data: snapshot, error: snapErr } = await supabaseAdmin
+        .from('wrapped_snapshot')
+        .upsert(
+          {
+            spotify_acc_id: spotifyAccount.id,
+            year,
+            time_range: timeRange,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'spotify_acc_id,year,time_range' }
+        )
+        .select()
+        .single();
+
+      if (snapErr) {
+        console.error('[top-tracks] wrapped_snapshot upsert error:', snapErr.message);
+      } else if (snapshot) {
+        await supabaseAdmin
+          .from('wrapped_items')
+          .delete()
+          .eq('snapshot_id', snapshot.id)
+          .eq('item_type', 'track');
+
+        const itemsToInsert = top20.map((t) => ({
+          snapshot_id: snapshot.id,
+          item_type: 'track',
+          spotify_id: t.spotify_id,
+          rank: t.rank,
+          name: t.name,
+          image_url: t.image
+        }));
+        const { error: insertErr } = await supabaseAdmin
+          .from('wrapped_items')
+          .insert(itemsToInsert);
+
+        if (insertErr) {
+          console.error('[top-tracks] wrapped_items insert error:', insertErr.message);
+        } else {
+          console.log('[top-tracks] Saved top 20 tracks to Supabase for snapshot', snapshot.id);
+        }
+      }
+    }
+
+    res.json({ tracks });
+  } catch (err) {
+    console.error('[top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
+/**
+ * GET /api/spotify/wrapped-top-tracks
+ * Returns the user's saved top 20 tracks from Supabase (from wrapped_snapshot + wrapped_items).
+ */
+router.get('/wrapped-top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { data: spotifyAccount, error: accErr } = await supabaseAdmin
+      .from('spotify_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+    if (accErr || !spotifyAccount) {
+      return res.status(404).json({ error: 'No linked Spotify account' });
+    }
+
+    const year = new Date().getFullYear();
+    const { data: snapshot, error: snapErr } = await supabaseAdmin
+      .from('wrapped_snapshot')
+      .select('id')
+      .eq('spotify_acc_id', spotifyAccount.id)
+      .eq('year', year)
+      .eq('time_range', 'medium_term')
+      .single();
+    if (snapErr || !snapshot) {
+      return res.json({ tracks: [] });
+    }
+
+    const { data: items, error: itemsErr } = await supabaseAdmin
+      .from('wrapped_items')
+      .select('rank, name, image_url')
+      .eq('snapshot_id', snapshot.id)
+      .eq('item_type', 'track')
+      .order('rank', { ascending: true });
+    if (itemsErr) {
+      return res.json({ tracks: [] });
+    }
+
+    res.json({ tracks: items || [] });
+  } catch (err) {
+    console.error('[wrapped-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
 export default router;

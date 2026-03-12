@@ -100,6 +100,15 @@ class ApiClient {
     return this.request('/api/spotify/current-playing');
   }
 
+  async getTopTracks(timeRange = 'short_term') {
+    const q = encodeURIComponent(timeRange);
+    return this.request(`/api/spotify/top-tracks?time_range=${q}`);
+  }
+
+  async getWrappedTopTracks() {
+    return this.request('/api/spotify/wrapped-top-tracks');
+  }
+
   // Friends endpoints
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');

@@ -1,26 +1,60 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
+import api from '../utils/api';
+
+const placeholderSongs = [
+  { id: 1, title: 'Song Title', album: 'Album name/artist', length: 'Song Length', imageUrl: null },
+  { id: 2, title: 'Song Title', album: 'Album name/artist', length: 'Song Length', imageUrl: null },
+  { id: 3, title: 'Song Title', album: 'Album name/artist', length: 'Song Length', imageUrl: null },
+  { id: 4, title: 'Song Title', album: 'Album name/artist', length: 'Song Length', imageUrl: null },
+  { id: 5, title: 'Song Title', album: 'Album name/artist', length: 'Song Length', imageUrl: null }
+];
 
 export default function PlaylistView() {
   const navigate = useNavigate();
-  
-  const songs = [
-    { id: 1, title: 'Song Title', album: 'Album name/artist', length: 'Song Length' },
-    { id: 2, title: 'Song Title', album: 'Album name/artist', length: 'Song Length' },
-    { id: 3, title: 'Song Title', album: 'Album name/artist', length: 'Song Length' },
-    { id: 4, title: 'Song Title', album: 'Album name/artist', length: 'Song Length' },
-    { id: 5, title: 'Song Title', album: 'Album name/artist', length: 'Song Length' }
-  ];
+  const location = useLocation();
+  const [playlistName, setPlaylistName] = useState('Playlist Name');
+  const [songs, setSongs] = useState(placeholderSongs);
+
+  useEffect(() => {
+    if (location.state?.playlistName && location.state?.songs?.length) {
+      setPlaylistName(location.state.playlistName);
+      setSongs(location.state.songs.map((s, i) => ({
+        id: s.id || i + 1,
+        title: s.title,
+        album: s.album || '',
+        length: s.length || '–',
+        imageUrl: s.imageUrl ?? null
+      })));
+      return;
+    }
+    api.getWrappedTopTracks()
+      .then((data) => {
+        if (data.tracks?.length) {
+          setPlaylistName('Your Top 20 Tracks');
+          setSongs(data.tracks.map((t, i) => ({
+            id: t.rank || i + 1,
+            title: t.name,
+            album: '',
+            length: '–',
+            imageUrl: t.image_url ?? null
+          })));
+        }
+      })
+      .catch(() => {});
+  }, [location.state]);
 
   return (
-    <div className="home-container dark page-transition">
-      <AnimatedBackground />
+    <div className="home-container dark page-transition playlist-page">
+      <div className="playlist-page-bg">
+        <AnimatedBackground />
+      </div>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
       `}</style>
-      <div style={styles.container}>
+      <div className="playlist-page-content" style={styles.container}>
         <div style={styles.content}>
           {/* Header */}
           <div style={styles.header}>
@@ -29,8 +63,8 @@ export default function PlaylistView() {
               <button style={styles.smallButton}>Export</button>
             </div>
             <div style={styles.titleSection}>
-              <h1 style={styles.playlistTitle}>Playlist Name</h1>
-              <p style={styles.playlistLength}>Playlist length</p>
+              <h1 style={styles.playlistTitle}>{playlistName}</h1>
+              <p style={styles.playlistLength}>{songs.length} song{songs.length !== 1 ? 's' : ''}</p>
               <div style={styles.underline}></div>
             </div>
             <button 
@@ -46,7 +80,11 @@ export default function PlaylistView() {
             {songs.map((song) => (
               <div key={song.id} style={styles.songRow}>
                 {/* Album Art */}
-                <div style={styles.albumArt}></div>
+                <div style={styles.albumArt}>
+                  {song.imageUrl ? (
+                    <img src={song.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                  ) : null}
+                </div>
                 
                 {/* Song Length */}
                 <div style={styles.songLength}>{song.length}</div>

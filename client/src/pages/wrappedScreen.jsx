@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
+import api from '../utils/api';
 
 const styles = {
   container: {
@@ -117,9 +118,31 @@ const styles = {
 
 export default function MustangWrapped() {
   const navigate = useNavigate();
-  
+  const [topTracks, setTopTracks] = useState([]);
+
+  useEffect(() => {
+    api.getTopTracks('medium_term')
+      .then((data) => {
+        console.log('Top 20 tracks:', data.tracks);
+        if (data.tracks?.length) setTopTracks(data.tracks);
+        data.tracks?.forEach((t, i) => {
+          console.log(`${i + 1}. ${t.name} – ${t.artists}`);
+        });
+      })
+      .catch((err) => {
+        console.warn('Could not load top tracks:', err.message);
+      });
+  }, []);
+
+  const top20Songs = topTracks.slice(0, 20).map((t) => ({
+    id: t.spotify_id,
+    title: t.name,
+    album: t.artists,
+    imageUrl: t.image
+  }));
+
   const wrappedItems = [
-    { id: 1, title: 'Wrapped Thing #1' },
+    { id: 1, title: 'Your Top 20 Tracks', isTop20Playlist: true },
     { id: 2, title: 'Wrapped Thing #2' },
     { id: 3, title: 'Wrapped Thing #3' },
     { id: 4, title: 'Wrapped Thing #4' },
@@ -170,7 +193,11 @@ export default function MustangWrapped() {
                   {/* View Playlist Button */}
                   <button 
                     style={styles.playlistButton}
-                    onClick={() => navigate('/playlist')}
+                    onClick={() => navigate('/playlist', {
+                      state: item.isTop20Playlist
+                        ? { playlistName: 'Your Top 20 Tracks', songs: top20Songs }
+                        : undefined
+                    })}
                   >
                     ♪ View Playlist
                   </button>
