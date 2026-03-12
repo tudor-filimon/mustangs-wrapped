@@ -421,12 +421,61 @@ router.get('/top-tracks', async (req, res, next) => {
     }
 
     const timeRange = req.query.time_range || 'short_term';
-    const spotifyResp = await axios.get(
-      `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=${timeRange}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
 
-    const items = spotifyResp.data?.items || [];
+    // Helper to fetch top tracks for a given time range
+    const fetchTopTracksForRange = async (range) => {
+      const resp = await axios.get(
+        `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=${range}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      return resp.data?.items || [];
+    };
+
+    // Start with requested time range
+    let combinedItems = await fetchTopTracksForRange(timeRange);
+    const seenIds = new Set(combinedItems.map((t) => t.id));
+
+    // Try other time ranges to fill up to 50 unique tracks
+    const allRanges = ['short_term', 'medium_term', 'long_term'];
+    for (const range of allRanges) {
+      if (combinedItems.length >= 50) break;
+      if (range === timeRange) continue;
+
+      try {
+        const extra = await fetchTopTracksForRange(range);
+        for (const t of extra) {
+          if (!t || !t.id || seenIds.has(t.id)) continue;
+          combinedItems.push(t);
+          seenIds.add(t.id);
+          if (combinedItems.length >= 50) break;
+        }
+      } catch (e) {
+        // If a fallback range fails, just skip it
+        console.warn(`[top-tracks] Failed to fetch extra range ${range}:`, e.message);
+      }
+    }
+
+    // As a final fallback, use recently-played to pad up to 50 unique tracks
+    if (combinedItems.length < 50) {
+      try {
+        const recentResp = await axios.get(
+          'https://api.spotify.com/v1/me/player/recently-played?limit=50',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        const recentItems = recentResp.data?.items || [];
+        for (const item of recentItems) {
+          const t = item?.track;
+          if (!t || !t.id || seenIds.has(t.id)) continue;
+          combinedItems.push(t);
+          seenIds.add(t.id);
+          if (combinedItems.length >= 50) break;
+        }
+      } catch (e) {
+        console.warn('[top-tracks] Failed to fetch recently-played padding:', e.message);
+      }
+    }
+
+    const items = combinedItems.slice(0, 50);
     const tracks = items.map((t, i) => ({
       rank: i + 1,
       name: t.name,

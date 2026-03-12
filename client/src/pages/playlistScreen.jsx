@@ -77,8 +77,11 @@ export default function PlaylistView() {
 
           {/* Song List */}
           <div style={styles.songList}>
-            {songs.map((song) => (
+            {songs.map((song, index) => (
               <div key={song.id} style={styles.songRow}>
+                {/* Track Number */}
+                <div style={styles.songIndex}>{index + 1}</div>
+
                 {/* Album Art */}
                 <div style={styles.albumArt}>
                   {song.imageUrl ? (
@@ -194,11 +197,17 @@ const styles = {
   },
   songRow: {
     display: 'grid',
-    gridTemplateColumns: '80px 120px 1fr 140px',
+    gridTemplateColumns: '40px 80px 120px 1fr 140px',
     alignItems: 'center',
     gap: '20px',
     padding: '20px 0',
     borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
+  },
+  songIndex: {
+    color: 'white',
+    fontSize: '14px',
+    fontWeight: '600',
+    textAlign: 'right'
   },
   albumArt: {
     width: '80px',
