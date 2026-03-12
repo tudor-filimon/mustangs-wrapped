@@ -114,7 +114,7 @@ function HomePage() {
         {/* ROW 1: Top Row For Campus Maps */}
         <div className="row top-row">
           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
-          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\musicalNote.svg" alt="Musical Note Icon" /> Top Songs</button>
+          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\AvatarIcon.svg" alt="Avatar Icon"/>Avatar</button>
         </div>
 
         {/* ROW 2 - STRAIGHT LINE */}
@@ -132,7 +132,7 @@ function HomePage() {
 
         {/* ROW 3 */}
         <div className="row bottom-row">
-          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\SettingsIcon.svg" alt="Settings Icons"/>Settings</button>
+           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\FeedIcon.svg" alt="Feed Icon" /> Your Feed</button>
           <button className="pill-btn" onClick={() => navigate('/wrapped')}><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
         </div>
 
