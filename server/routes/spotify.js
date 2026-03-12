@@ -354,7 +354,8 @@ router.get('/top-tracks', async (req, res, next) => {
       name: t.name,
       artists: t.artists?.map(a => a.name).join(', ') || '',
       image: t.album?.images?.[0]?.url || null,
-      spotify_id: t.id
+      spotify_id: t.id,
+      duration_ms: t.duration_ms || null
     }));
 
     console.log('[top-tracks] Top 20 tracks for user', user.id);
@@ -393,7 +394,8 @@ router.get('/top-tracks', async (req, res, next) => {
           spotify_id: t.spotify_id,
           rank: t.rank,
           name: t.name,
-          image_url: t.image
+          image_url: t.image,
+          duration_ms: t.duration_ms || null
         }));
         const { error: insertErr } = await supabaseAdmin
           .from('wrapped_items')
@@ -464,6 +466,57 @@ router.get('/wrapped-top-tracks', async (req, res, next) => {
     res.json({ tracks: items || [] });
   } catch (err) {
     console.error('[wrapped-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
+/**
+ * GET /api/spotify/global-top-tracks
+ * Returns the top 20 tracks across all users, ranked by an approximate
+ * total listen-time proxy derived from duration_ms and rank.
+ *
+ * NOTE: This uses stored wrapped_items snapshots; it does not query Spotify
+ * directly and does not represent exact play counts from Spotify.
+ */
+router.get('/global-top-tracks', async (req, res, next) => {
+  try {
+    const { data: items, error } = await supabaseAdmin
+      .from('wrapped_items')
+      .select('spotify_id, name, image_url, duration_ms, rank')
+      .eq('item_type', 'track');
+
+    if (error) {
+      console.error('[global-top-tracks] wrapped_items fetch error:', error.message);
+      return res.status(500).json({ error: 'Failed to load track data' });
+    }
+
+    const statsMap = new Map();
+
+    for (const item of items || []) {
+      const durationMs = item.duration_ms || 0;
+
+      if (!statsMap.has(item.spotify_id)) {
+        statsMap.set(item.spotify_id, {
+          spotify_id: item.spotify_id,
+          name: item.name,
+          image_url: item.image_url,
+          total_duration_ms: 0
+        });
+      }
+
+      const stat = statsMap.get(item.spotify_id);
+      stat.total_duration_ms += durationMs;
+    }
+
+    // Convert to array and sort by total_duration_ms descending
+    const allTracks = Array.from(statsMap.values());
+    allTracks.sort((a, b) => (b.total_duration_ms || 0) - (a.total_duration_ms || 0));
+
+    const top20 = allTracks.slice(0, 20);
+
+    res.json({ tracks: top20 });
+  } catch (err) {
+    console.error('[global-top-tracks] Error:', err.message);
     next(err);
   }
 });

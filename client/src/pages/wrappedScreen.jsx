@@ -119,6 +119,7 @@ const styles = {
 export default function MustangWrapped() {
   const navigate = useNavigate();
   const [topTracks, setTopTracks] = useState([]);
+  const [globalTopTracks, setGlobalTopTracks] = useState([]);
 
   useEffect(() => {
     api.getTopTracks('medium_term')
@@ -132,6 +133,15 @@ export default function MustangWrapped() {
       .catch((err) => {
         console.warn('Could not load top tracks:', err.message);
       });
+
+    api.getGlobalTopTracks()
+      .then((data) => {
+        console.log('Global top tracks:', data.tracks);
+        if (data.tracks?.length) setGlobalTopTracks(data.tracks);
+      })
+      .catch((err) => {
+        console.warn('Could not load global top tracks:', err.message);
+      });
   }, []);
 
   const top20Songs = topTracks.slice(0, 20).map((t) => ({
@@ -141,9 +151,16 @@ export default function MustangWrapped() {
     imageUrl: t.image
   }));
 
+  const globalTop20Songs = globalTopTracks.slice(0, 20).map((t, index) => ({
+    id: t.spotify_id || index + 1,
+    title: t.name,
+    album: '',
+    imageUrl: t.image_url || null
+  }));
+
   const wrappedItems = [
     { id: 1, title: 'Your Top 20 Tracks', isTop20Playlist: true },
-    { id: 2, title: 'Wrapped Thing #2' },
+    { id: 2, title: 'Campus Top 20 Tracks', isGlobalTop20Playlist: true },
     { id: 3, title: 'Wrapped Thing #3' },
     { id: 4, title: 'Wrapped Thing #4' },
     { id: 5, title: 'Wrapped Thing #5' },
@@ -196,7 +213,9 @@ export default function MustangWrapped() {
                     onClick={() => navigate('/playlist', {
                       state: item.isTop20Playlist
                         ? { playlistName: 'Your Top 20 Tracks', songs: top20Songs }
-                        : undefined
+                        : item.isGlobalTop20Playlist
+                          ? { playlistName: 'Campus Top 20 Tracks', songs: globalTop20Songs }
+                          : undefined
                     })}
                   >
                     ♪ View Playlist
