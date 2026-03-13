@@ -263,4 +263,58 @@ router.get('/me', async (req, res, next) => {
   }
 });
 
+/**
+ * PUT /api/auth/profile
+ * Updates the authenticated user's profile in Supabase.
+ */
+router.put('/profile', async (req, res, next) => {
+  try {
+    // 1. Verify user's token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // 2. Extract data to update
+    const { faculty, classYear, major } = req.body; 
+
+    const updateData = {};
+    if (faculty !== undefined) updateData.faculty = faculty;
+    if (classYear !== undefined) updateData.class_year = classYear; 
+    if (major !== undefined) updateData.major = major;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: 'No update data provided' });
+    }
+
+    // 3. Perform the update in Supabase
+    const { data: updatedProfile, error: updateError } = await supabaseAdmin
+      .from('users')
+      .update(updateData)
+      .eq('id', user.id)
+      .select('display_name, class_year, faculty, major, avatar_url')
+      .single();
+
+    if (updateError) throw updateError;
+
+    // 4. Send back the combined updated user object
+    res.json({ 
+      message: 'Profile updated successfully', 
+      user: {
+        id: user.id,
+        email: user.email,
+        ...updatedProfile
+      } 
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

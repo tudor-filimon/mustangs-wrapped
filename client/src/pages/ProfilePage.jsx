@@ -10,14 +10,22 @@ const defaultAvatar = '/src/assets/images/default-avatar.png';
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const { user } = useAuth();
+  
+  // Pull 'updateUserInContext' from useAuth
+  const { user, updateUserInContext } = useAuth();
+  
   const [profileUser, setProfileUser] = useState(null);
   const [relationship, setRelationship] = useState(null);
   const [loading, setLoading] = useState(!!userId);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // NEW: State to track which stat modal is currently open
+  
+  // State to track which stat modal is currently open
   const [activeModal, setActiveModal] = useState(null);
+
+  // State for Orbital Editing 
+  const [editField, setEditField] = useState('');
+  const [editValue, setEditValue] = useState('');
+  const [updateLoading, setUpdateLoading] = useState(false);
 
   const isViewingOther = userId && user?.id && userId !== user.id;
 
@@ -109,13 +117,42 @@ export default function ProfilePage() {
     }
   };
 
+  // Opens the edit modal and populates the text box
+  const handleOpenEdit = (field, currentValue) => {
+    if (isViewingOther) return; 
+    setEditField(field);
+    setEditValue(currentValue || '');
+    setActiveModal('edit_node');
+  };
+
+  // Submits the new value to the backend and updates context
+  const handleUpdateProfile = async () => {
+    if (updateLoading || isViewingOther) return;
+    setUpdateLoading(true);
+    try {
+      const payload = {};
+      payload[editField] = editValue; 
+
+      const response = await api.updateProfile(payload);
+      
+      // Update the context state instantly 
+      updateUserInContext(response.user);
+      setActiveModal(null);
+    } catch (e) {
+      alert(e.message || 'Failed to update profile');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
   const displayUser = isViewingOther ? profileUser : user;
   const name = displayUser?.display_name || displayUser?.displayName || displayUser?.email || 'Guest';
   const avatar = displayUser?.avatar_url || defaultAvatar;
 
+  // Map database columns to display friendly names
   const userStats = {
     faculty: displayUser?.faculty || 'Unknown Faculty',
-    year: displayUser?.classYear || displayUser?.class_year || 'Unknown Year',
+    year: displayUser?.classYear || displayUser?.class_year || 'Unknown Year', 
     major: displayUser?.major || 'Undeclared'
   };
 
@@ -181,6 +218,32 @@ export default function ProfilePage() {
   // Helper function to render modal content dynamically
   const renderModalContent = () => {
     switch(activeModal) {
+      case 'edit_node':
+        const fieldLabels = {
+          faculty: "Faculty",
+          classYear: "Class Year",
+          major: "Major"
+        };
+        return (
+          <>
+            <h3 style={styles.modalHeader}>Edit Profile Info</h3>
+            <p style={styles.modalLabel}>{fieldLabels[editField]}</p>
+            <input 
+              type="text" 
+              value={editValue} 
+              onChange={e => setEditValue(e.target.value)} 
+              style={styles.modalInput}
+              placeholder={`Enter new ${fieldLabels[editField]}`}
+            />
+            <button 
+              onClick={handleUpdateProfile} 
+              style={styles.submitBtn} 
+              disabled={updateLoading}
+            >
+              {updateLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </>
+        );
       case 'obsession':
         return (
           <>
@@ -270,6 +333,16 @@ export default function ProfilePage() {
           animation: counter-spin 25s linear infinite;
           box-shadow: 0 8px 32px rgba(147, 51, 234, 0.3);
           white-space: nowrap;
+          transition: all 0.2s ease;
+        }
+
+        /* Editable Orbital Node Styling (Only applies if viewing your profile) */
+        .editable-node:hover {
+          background: rgba(167, 139, 250, 0.3);
+          cursor: pointer;
+          transform: scale(1.05) counter-spin 25s linear infinite !important;
+          box-shadow: 0 8px 32px rgba(188, 19, 254, 0.6);
+          border-color: #d8b4fe;
         }
 
         .node-top { top: -35px; left: calc(50% - 65px); }
@@ -283,7 +356,7 @@ export default function ProfilePage() {
           border-radius: 20px;
           padding: 20px;
           transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-          cursor: pointer; /* Makes it obvious it's clickable */
+          cursor: pointer;
         }
         
         .glass-card:hover {
@@ -306,7 +379,6 @@ export default function ProfilePage() {
           margin-bottom: 60px;
         }
 
-        /* Modal Styles */
         .modal-overlay {
           position: fixed;
           top: 0; left: 0; right: 0; bottom: 0;
@@ -350,7 +422,6 @@ export default function ProfilePage() {
         }
       `}</style>
 
-      {/* NEW: The Modal Overlay */}
       {activeModal && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content-box" onClick={e => e.stopPropagation()}>
@@ -415,15 +486,30 @@ export default function ProfilePage() {
           </div>
 
           <div className="orbit-path">
-            <div className="stat-node node-top">
+            {/* Conditional formatting and click events based on isViewingOther permission */}
+            <div 
+              className={`stat-node node-top ${!isViewingOther ? 'editable-node' : ''}`}
+              onClick={() => handleOpenEdit('faculty', userStats.faculty)}
+              title={!isViewingOther ? 'Click to edit Faculty' : ''}
+            >
               <p style={styles.statLabel}>Faculty</p>
               <p style={styles.statValue}>{userStats.faculty}</p>
             </div>
-            <div className="stat-node node-bottom-right">
+            
+            <div 
+              className={`stat-node node-bottom-right ${!isViewingOther ? 'editable-node' : ''}`}
+              onClick={() => handleOpenEdit('classYear', userStats.year)}
+              title={!isViewingOther ? 'Click to edit Class Year' : ''}
+            >
               <p style={styles.statLabel}>Year</p>
               <p style={styles.statValue}>{userStats.year}</p>
             </div>
-            <div className="stat-node node-bottom-left">
+            
+            <div 
+              className={`stat-node node-bottom-left ${!isViewingOther ? 'editable-node' : ''}`}
+              onClick={() => handleOpenEdit('major', userStats.major)}
+              title={!isViewingOther ? 'Click to edit Major' : ''}
+            >
               <p style={styles.statLabel}>Major</p>
               <p style={styles.statValue}>{userStats.major}</p>
             </div>
@@ -432,8 +518,6 @@ export default function ProfilePage() {
 
         <div style={styles.contentWrapper}>
           <h3 style={styles.sectionHeader}>Your Stats</h3>
-          
-          {/* UPDATED: Cards now have onClick events */}
           <div className="stats-grid">
             <div className="glass-card" onClick={() => setActiveModal('obsession')} title="Click for details!">
               <p style={styles.statLabel}>Obsession Level</p>
@@ -591,7 +675,7 @@ const styles = {
     alignItems: 'center',
     gap: '20px',
     padding: '15px 25px',
-    cursor: 'default', /* Top tracks shouldn't look clickable unless you want them to be later! */
+    cursor: 'default',
   },
   trackNumber: {
     fontFamily: "'Press Start 2P', cursive",
@@ -636,7 +720,6 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
   },
-  // NEW: Styles for the modal text
   modalHeader: {
     fontFamily: "'Jersey 25', sans-serif",
     fontSize: '40px',
@@ -652,5 +735,40 @@ const styles = {
     color: '#e9d5ff',
     lineHeight: '1.6',
     margin: 0,
-  }
+  },
+  modalLabel: {
+    fontFamily: "'Press Start 2P', cursive",
+    fontSize: '12px',
+    color: '#a78bfa',
+    textTransform: 'uppercase',
+    marginBottom: '10px',
+    textAlign: 'left',
+    width: '100%',
+  },
+  modalInput: {
+    width: '100%',
+    padding: '15px',
+    background: 'rgba(0,0,0,0.3)',
+    border: '2px solid #a78bfa',
+    borderRadius: '12px',
+    color: 'white',
+    fontFamily: "'Inter', sans-serif",
+    fontSize: '16px',
+    marginBottom: '25px',
+    outline: 'none',
+    transition: 'border-color 0.2s ease',
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '15px',
+    background: '#a78bfa',
+    border: 'none',
+    borderRadius: '12px',
+    color: '#1f1041',
+    fontFamily: "'Inter', sans-serif",
+    fontWeight: '800',
+    fontSize: '16px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease, transform 0.1s ease',
+  },
 };

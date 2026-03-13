@@ -85,12 +85,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Instantly updates the user state across the app after editing profile
+  const updateUserInContext = (updatedUserData) => {
+    setUser(updatedUserData);
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
+    updateUserInContext,
     isAuthenticated: !!user
   };
 

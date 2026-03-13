@@ -83,6 +83,14 @@ class ApiClient {
     return this.request('/api/auth/me');
   }
 
+  // Updates the user's major, faculty, or class year
+  async updateProfile(profileData) {
+    return this.request('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    });
+  }
+
   // Spotify endpoints
   async getSpotifyAuthUrl() {
     return this.request('/api/spotify/connect', {
@@ -98,19 +106,6 @@ class ApiClient {
 
   async getCurrentPlaying() {
     return this.request('/api/spotify/current-playing');
-  }
-
-  async getTopTracks(timeRange = 'short_term') {
-    const q = encodeURIComponent(timeRange);
-    return this.request(`/api/spotify/top-tracks?time_range=${q}`);
-  }
-
-  async getWrappedTopTracks() {
-    return this.request('/api/spotify/wrapped-top-tracks');
-  }
-
-  async getGlobalTopTracks() {
-    return this.request('/api/spotify/global-top-tracks');
   }
 
   // Friends endpoints
@@ -158,7 +153,7 @@ class ApiClient {
     return this.request(`/api/friends/profile/${encodeURIComponent(userId)}`);
   }
 
-    async getSpotifyTopTracks() {
+  async getSpotifyTopTracks() {
     return this.request('/api/spotify/top-tracks');
   }
 
