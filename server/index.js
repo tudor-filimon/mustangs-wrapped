@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import spotifyRoutes from './routes/spotify.js';
 import friendsRoutes from './routes/friends.js';
+import feedRoutes from './routes/feed.js'; // <-- NEW IMPORT
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/spotify', spotifyRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/feed', feedRoutes); // <-- NEW ROUTE CONNECTION
 
 // Health check
 app.get('/health', (req, res) => {
@@ -35,6 +37,6 @@ app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📡 Frontend URL: ${FRONTEND_URL}`);
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Frontend URL: ${FRONTEND_URL}`);
 });

@@ -83,14 +83,6 @@ class ApiClient {
     return this.request('/api/auth/me');
   }
 
-  // Updates the user's major, faculty, or class year
-  async updateProfile(profileData) {
-    return this.request('/api/auth/profile', {
-      method: 'PUT',
-      body: JSON.stringify(profileData)
-    });
-  }
-
   // Spotify endpoints
   async getSpotifyAuthUrl() {
     return this.request('/api/spotify/connect', {
@@ -106,6 +98,15 @@ class ApiClient {
 
   async getCurrentPlaying() {
     return this.request('/api/spotify/current-playing');
+  }
+
+  // --- NEW ADDITION ---
+  // Sends a song to the global feed
+  async postToFeed(postData) {
+    return this.request('/api/feed', {
+      method: 'POST',
+      body: JSON.stringify(postData)
+    });
   }
 
   // Friends endpoints

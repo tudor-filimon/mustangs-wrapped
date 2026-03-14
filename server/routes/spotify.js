@@ -236,12 +236,14 @@ router.get('/current-playing', async (req, res, next) => {
     const song = item.name;
     const artists = item.artists?.map(a => a.name).join(', ') || '';
     const image = item.album?.images?.[0]?.url || null;
+    const track_id = item.id; // <-- WE GRAB THE ID HERE
 
     res.json({
       playing: true,
       song,
       artists,
       image,
+      track_id, // <-- ADDED TO THE RESPONSE
       progress_ms: data.progress_ms,
       duration_ms: item.duration_ms
     });
@@ -250,122 +252,6 @@ router.get('/current-playing', async (req, res, next) => {
   }
 });
 
-router.get('/top-tracks', async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
-    const token = authHeader.substring(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
-
-    const accessToken = await getAccessTokenForUserId(user.id);
-    const spotifyResp = await axios.get('https://api.spotify.com/v1/me/top/tracks', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    const items = (spotifyResp.data.items || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      artists: item.artists.map(a => a.name).join(', '),
-      image: item.album?.images?.[0]?.url || null,
-      duration_ms: item.duration_ms,
-      popularity: item.popularity
-    }));
-
-    res.json({ items });
-  } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message });
-    next(err);
-  }
-});
-
-router.get('/top-artists', async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
-    const token = authHeader.substring(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
-
-    const accessToken = await getAccessTokenForUserId(user.id);
-    const spotifyResp = await axios.get('https://api.spotify.com/v1/me/top/artists', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    const items = (spotifyResp.data.items || []).map(a => ({
-      id: a.id,
-      name: a.name,
-      genres: a.genres || [],
-      image: a.images?.[0]?.url || null
-    }));
-
-    res.json({ items });
-  } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message });
-    next(err);
-  }
-});
-
-router.get('/stats', async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
-    const token = authHeader.substring(7);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
-
-    const accessToken = await getAccessTokenForUserId(user.id);
-
-    const [topTracksResp, topArtistsResp, recentResp] = await Promise.all([
-      axios.get('https://api.spotify.com/v1/me/top/tracks', { headers: { Authorization: `Bearer ${accessToken}` } }),
-      axios.get('https://api.spotify.com/v1/me/top/artists', { headers: { Authorization: `Bearer ${accessToken}` } }),
-      axios.get('https://api.spotify.com/v1/me/player/recently-played', { headers: { Authorization: `Bearer ${accessToken}` } })
-    ]);
-
-    const topTracks = (topTracksResp.data.items || []).map(item => ({
-      id: item.id,
-      name: item.name,
-      artists: item.artists.map(a => a.name).join(', '),
-      image: item.album?.images?.[0]?.url || null,
-      duration_ms: item.duration_ms,
-      popularity: item.popularity
-    }));
-
-    const topArtists = (topArtistsResp.data.items || []).map(a => ({
-      id: a.id,
-      name: a.name,
-      genres: a.genres || [],
-      image: a.images?.[0]?.url || null,
-      popularity: a.popularity
-    }));
-
-    const recentItems = (recentResp.data.items || []).map(r => ({
-      played_at: r.played_at,
-      track_id: r.track.id,
-      name: r.track.name,
-      artists: r.track.artists.map(a=>a.name).join(', '),
-      duration_ms: r.track.duration_ms
-    }));
-
-    const totalPlays = recentItems.length;
-    const totalMs = recentItems.reduce((s, it) => s + (it.duration_ms || 0), 0);
-
-    res.json({
-      topTracks,
-      topArtists,
-      recentSummary: { totalPlays, totalMs }
-    });
-  } catch (err) {
-    if (err.status) return res.status(err.status).json({ error: err.message });
-    next(err);
-  }
-});
-
-/**
- * GET /api/spotify/top-tracks
- * Fetches the user's top 50 tracks from Spotify (short_term = ~4 weeks).
- * Query: time_range = short_term | medium_term | long_term (optional, default short_term).
- */
 router.get('/top-tracks', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -425,7 +311,7 @@ router.get('/top-tracks', async (req, res, next) => {
     // Helper to fetch top tracks for a given time range
     const fetchTopTracksForRange = async (range) => {
       const resp = await axios.get(
-        `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=${range}`,
+        `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=$${range}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       return resp.data?.items || [];
@@ -543,10 +429,88 @@ router.get('/top-tracks', async (req, res, next) => {
   }
 });
 
-/**
- * GET /api/spotify/wrapped-top-tracks
- * Returns the user's saved top 20 tracks from Supabase (from wrapped_snapshot + wrapped_items).
- */
+router.get('/top-artists', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
+    const token = authHeader.substring(7);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+
+    const accessToken = await getAccessTokenForUserId(user.id);
+    const spotifyResp = await axios.get('https://api.spotify.com/v1/me/top/artists', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const items = (spotifyResp.data.items || []).map(a => ({
+      id: a.id,
+      name: a.name,
+      genres: a.genres || [],
+      image: a.images?.[0]?.url || null
+    }));
+
+    res.json({ items });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
+router.get('/stats', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
+    const token = authHeader.substring(7);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return res.status(401).json({ error: 'Invalid token' });
+
+    const accessToken = await getAccessTokenForUserId(user.id);
+
+    const [topTracksResp, topArtistsResp, recentResp] = await Promise.all([
+      axios.get('https://api.spotify.com/v1/me/top/tracks', { headers: { Authorization: `Bearer ${accessToken}` } }),
+      axios.get('https://api.spotify.com/v1/me/top/artists', { headers: { Authorization: `Bearer ${accessToken}` } }),
+      axios.get('https://api.spotify.com/v1/me/player/recently-played', { headers: { Authorization: `Bearer ${accessToken}` } })
+    ]);
+
+    const topTracks = (topTracksResp.data.items || []).map(item => ({
+      id: item.id,
+      name: item.name,
+      artists: item.artists.map(a => a.name).join(', '),
+      image: item.album?.images?.[0]?.url || null,
+      duration_ms: item.duration_ms,
+      popularity: item.popularity
+    }));
+
+    const topArtists = (topArtistsResp.data.items || []).map(a => ({
+      id: a.id,
+      name: a.name,
+      genres: a.genres || [],
+      image: a.images?.[0]?.url || null,
+      popularity: a.popularity
+    }));
+
+    const recentItems = (recentResp.data.items || []).map(r => ({
+      played_at: r.played_at,
+      track_id: r.track.id,
+      name: r.track.name,
+      artists: r.track.artists.map(a=>a.name).join(', '),
+      duration_ms: r.track.duration_ms
+    }));
+
+    const totalPlays = recentItems.length;
+    const totalMs = recentItems.reduce((s, it) => s + (it.duration_ms || 0), 0);
+
+    res.json({
+      topTracks,
+      topArtists,
+      recentSummary: { totalPlays, totalMs }
+    });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ error: err.message });
+    next(err);
+  }
+});
+
 router.get('/wrapped-top-tracks', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -597,14 +561,6 @@ router.get('/wrapped-top-tracks', async (req, res, next) => {
   }
 });
 
-/**
- * GET /api/spotify/global-top-tracks
- * Returns the top 50 tracks across all users, ranked by total duration_ms
- * accumulated in wrapped_items.
- *
- * NOTE: This uses stored wrapped_items snapshots; it does not query Spotify
- * directly and does not represent exact play counts from Spotify.
- */
 router.get('/global-top-tracks', async (req, res, next) => {
   try {
     const { data: items, error } = await supabaseAdmin
@@ -635,7 +591,6 @@ router.get('/global-top-tracks', async (req, res, next) => {
       stat.total_duration_ms += durationMs;
     }
 
-    // Convert to array and sort by total_duration_ms descending
     const allTracks = Array.from(statsMap.values());
     allTracks.sort((a, b) => (b.total_duration_ms || 0) - (a.total_duration_ms || 0));
 

@@ -8,12 +8,12 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 function HomePage() {
-  // Toggle this to see the Light/Dark mode changes
   const [theme, setTheme] = useState('dark'); 
-  // State for the WFN Modal
   const [showWfnModal, setShowWfnModal] = useState(false);
   const [showAlbumModal, setShowAlbumModal] = useState(false);
   
+  // NEW: State to track button text/feedback
+  const [feedStatus, setFeedStatus] = useState('');
   
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -26,22 +26,53 @@ function HomePage() {
     let mounted = true;
     const fetchNow = async () => {
       try {
-        const data = await api.getCurrentPlaying(); // ensure you added this method to api.js
+        const data = await api.getCurrentPlaying(); 
         if (mounted) setNowPlaying(data);
       } catch (e) {
         console.error('NowPlaying fetch error', e);
       }
     };
     fetchNow();
-    const id = setInterval(fetchNow, 15000); // poll every 15s
+    const id = setInterval(fetchNow, 15000); 
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
+  // NEW: Function to handle sending the song to the feed
+  const handleSendToFeed = async () => {
+    if (!nowPlaying || !nowPlaying.track_id) {
+      setFeedStatus('Error');
+      setTimeout(() => setFeedStatus(''), 3000);
+      return;
+    }
+    
+    setFeedStatus('Loading...');
+    try {
+      await api.postToFeed({
+        song_name: nowPlaying.song,
+        artist_name: nowPlaying.artists,
+        album_image_url: nowPlaying.image,
+        spotify_track_id: nowPlaying.track_id,
+        username: name // <-- ADDED: Passes the username to the database
+      });
+      setFeedStatus('Successfully sent to feed'); // <-- FIXED: Changed to "feed"
+      
+      // Clear the message and close modal after 2 seconds
+      setTimeout(() => {
+        setFeedStatus('');
+        setShowAlbumModal(false);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Feed post error:', error);
+      setFeedStatus('Error');
+      setTimeout(() => setFeedStatus(''), 3000);
+    }
+  };
+
   return (
     <div className={`home-container ${theme} page-transition`}>
-      
-    {/* Handles the animated background */}
       <AnimatedBackground />
+
       {showWfnModal && (
         <div className="modal-overlay" onClick={() => setShowWfnModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -50,7 +81,8 @@ function HomePage() {
           </div>
         </div>
       )}
-{/* Album Click Modal */}
+
+      {/* Album Click Modal - UPDATED WITH SEND BUTTON */}
       {showAlbumModal && nowPlaying && (
         <div className="modal-overlay" onClick={() => setShowAlbumModal(false)}>
           <div className="modal-content" style={{ textAlign: 'center', padding: '30px' }} onClick={(e) => e.stopPropagation()}>
@@ -62,12 +94,31 @@ function HomePage() {
             />
             <h2 style={{ marginTop: '20px', color: 'white', fontSize: '24px' }}>{nowPlaying.song}</h2>
             <p style={{ color: '#ccc', fontSize: '16px', marginTop: '5px' }}>{nowPlaying.artists}</p>
+            
+            <button 
+              onClick={handleSendToFeed}
+              disabled={feedStatus === 'Loading...' || feedStatus === 'Successfully sent to feed'}
+              style={{
+                marginTop: '25px',
+                padding: '12px 24px',
+                borderRadius: '25px',
+                border: 'none',
+                backgroundColor: '#a78bfa',
+                color: '#1f1041',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                cursor: (feedStatus === 'Loading...' || feedStatus === 'Successfully sent to feed') ? 'default' : 'pointer',
+                transition: 'all 0.2s',
+                opacity: (feedStatus === 'Loading...' || feedStatus === 'Successfully sent to feed') ? 0.7 : 1
+              }}
+            >
+              {feedStatus || 'Send to Feed'}
+            </button>
           </div>
         </div>
       )}
 
       <header className="header">
-        
           <button 
              className="pill-btn theme-toggle" 
              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -84,7 +135,6 @@ function HomePage() {
             <input type="text" placeholder="Find what Mustangs are listening to" />
           </div>
       
-{/* Integrated with backend by using AuthContext.jsx file */}
           <div className="header-center">
               <div className="profile-pic-container">
                 <img
@@ -96,59 +146,46 @@ function HomePage() {
               <h2>Hi, {name}</h2>
             </div>
         
-
         <div className="header-right">
-          {/* Added onClick sets the modal state to true to open the modal */}
           <div className="circle-icon wfn" onClick={() => setShowWfnModal(true)}>
             <img src="src\assets\images\WFNLogo-WhiteRound.png" alt="WFN logo" />
           </div>
-          
           <div className="circle-icon mustangs"><img src="src\assets\images\WesternMustangLogo1.svg" alt="Mustangs Logo"/></div>
           <div className="circle-icon spotify"><img src="src\assets\images\Spotify Logo.png" alt="Spotify Logo" /></div>
         </div>
       </header>
 
-      {/* === MAIN CONTENT === */}
       <main className="main-layout">
-        
-        {/* ROW 1: Top Row For Campus Maps */}
         <div className="row top-row">
           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\AvatarIcon.svg" alt="Avatar Icon"/>Avatar</button>
         </div>
 
-        {/* ROW 2 - STRAIGHT LINE */}
         <div className="row middle-row">
           <button className="pill-btn side-btn" onClick={() => navigate('/profile')}><img src="src\assets\images\Account.svg" alt="Account Icon" />Account</button>
 
-    {/*Wrapped Sign in the middle. Each individual letter in a span so i can put hover effect animations on them  */}
           <h1 className="title">
             <span>M</span><span>u</span><span>s</span><span>t</span><span>a</span><span>n</span><span>g</span>
             <span> </span><span>W</span><span>r</span><span>a</span><span>p</span><span>p</span><span>e</span><span>d</span>
-            </h1>
+          </h1>
           
           <button className="pill-btn side-btn" onClick={() => navigate('/friends')}><img src="src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends</button>
         </div>
 
-        {/* ROW 3 */}
         <div className="row bottom-row">
            <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\FeedIcon.svg" alt="Feed Icon" /> Your Feed</button>
           <button className="pill-btn" onClick={() => navigate('/wrapped')}><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
         </div>
-
       </main>
 
-      {/* === FOOTER === */}
-    {nowPlaying?.playing ? (
+      {nowPlaying?.playing ? (
       <div className="now-playing">
         <div className="np-left">Now Playing:</div>
-
         <div className="np-center">
           <div className="visualizer-container">
             <div className="bar"></div><div className="bar"></div><div className="bar"></div><div className="bar"></div><div className="bar"></div>
           </div>
         </div>
-
         <div className="np-right">
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             {nowPlaying.image && (
