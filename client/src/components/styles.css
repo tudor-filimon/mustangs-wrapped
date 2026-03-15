@@ -493,3 +493,238 @@ body {
 .coming-soon-back:hover {
   background: #f3e8ff;
 }
+
+/* =========================================
+   FEED PAGE UI
+   ========================================= */
+
+.feed-page-container {
+  overflow: hidden; 
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-header {
+  padding: 20px 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  z-index: 50;
+  background: rgba(31, 16, 65, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.feed-back-btn {
+  background-color: #e9d5ff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #581c87;
+  cursor: pointer;
+}
+
+.feed-title {
+  font-family: "Jersey 25", sans-serif;
+  font-size: 40px;
+  color: white;
+  margin: 0;
+  text-shadow: 0 0 10px #bc13fe;
+}
+
+.feed-loading-text {
+  color: #d8b4fe;
+  font-family: 'Press Start 2P', cursive;
+  text-align: center;
+  margin-top: 100px;
+  font-size: 14px;
+}
+
+/* Canvas & Panning Area */
+.canvas-container {
+  flex: 1;
+  width: 100%;
+  cursor: grab;
+  position: relative;
+  z-index: 5;
+}
+
+.canvas-container:active {
+  cursor: grabbing;
+}
+
+.feed-environment {
+  width: 4000px;
+  height: 4000px;
+  position: relative;
+background-image: linear-gradient(rgba(167, 139, 250, 0.15) 1px, transparent 1px), 
+                    linear-gradient(90deg, rgba(167, 139, 250, 0.15) 1px, transparent 1px);
+  background-size: 100px 100px;
+}
+
+.canvas-controls {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  display: flex;
+  gap: 10px;
+  z-index: 100;
+}
+
+.control-btn {
+  background: rgba(167, 139, 250, 0.2);
+  border: 1px solid #a78bfa;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Center Profile Node */
+.feed-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
+
+.feed-center-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid #bc13fe;
+  box-shadow: 0 0 50px rgba(188, 19, 254, 0.8);
+  object-fit: cover;
+}
+
+.feed-center-label {
+  margin-top: 15px;
+  font-family: 'Press Start 2P', cursive;
+  color: white;
+  font-size: 12px;
+  background: rgba(0,0,0,0.5);
+  padding: 8px 12px;
+  border-radius: 10px;
+}
+
+/* Orbiting Posts */
+.orbit-ring-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px dashed rgba(167, 139, 250, 0.2);
+  pointer-events: none;
+}
+
+.feed-orbit-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 20;
+  transition: transform 0.2s, box-shadow 0.2s;
+  animation: floatNode 4s ease-in-out infinite;
+}
+
+.feed-orbit-node:hover {
+  transform: scale(1.1) !important; /* Forces scale on hover overriding inline transform momentarily if needed, though inline usually wins. Handled in JS */
+  z-index: 30;
+}
+
+.feed-node-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid #a78bfa;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+}
+
+/* Feed Modal */
+.feed-modal-box {
+  background: linear-gradient(135deg, rgba(91, 48, 133, 0.95), rgba(31, 16, 65, 0.98));
+  border: 2px solid #a78bfa;
+  border-radius: 24px;
+  padding: 30px;
+  max-width: 350px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(188, 19, 254, 0.4);
+  position: relative;
+}
+
+.feed-modal-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  margin-bottom: 20px;
+  object-fit: cover;
+}
+
+.feed-modal-song {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+  margin: 0 0 8px 0;
+}
+
+.feed-modal-artist {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #d8b4fe;
+  margin: 0 0 25px 0;
+}
+
+.feed-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.feed-spotify-btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: #1DB954;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.feed-remove-btn {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-family: 'Inter', sans-serif;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+@keyframes floatNode {
+  0% { margin-top: 0px; }
+  50% { margin-top: -15px; }
+  100% { margin-top: 0px; }
+}

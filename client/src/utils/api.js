@@ -165,6 +165,26 @@ class ApiClient {
   async getSpotifyStats() {
     return this.request('/api/spotify/stats');
   }
+
+  
+  async postToFeed(postData) {
+    return this.request('/api/feed', {
+      method: 'POST',
+      body: JSON.stringify(postData)
+    });
+  }
+
+  
+  // Fetches posts for the galaxy canvas
+  async getFeedPosts() {
+    return this.request('/api/feed', { method: 'GET' });
+  }
+
+  // Deletes a specific post from the user's orbit
+  async deleteFeedPost(postId) {
+    return this.request(`/api/feed/${postId}`, { method: 'DELETE' });
+  }
+  
 }
 
 export default new ApiClient();

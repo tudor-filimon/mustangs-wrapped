@@ -173,7 +173,7 @@ function HomePage() {
         </div>
 
         <div className="row bottom-row">
-           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\FeedIcon.svg" alt="Feed Icon" /> Your Feed</button>
+           <button className="pill-btn" onClick={() => navigate('/feed')}><img src="src\assets\images\FeedIcon.svg" alt="Feed Icon" /> Your Feed</button>
           <button className="pill-btn" onClick={() => navigate('/wrapped')}><img src="src\assets\images\horseIcon.svg" alt="Mustang Wrapped Icon" />Mustang Wrapped</button>
         </div>
       </main>

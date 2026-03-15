@@ -12,6 +12,7 @@ import FriendsPage from './pages/FriendsPage'
 import MustangWrappedLogin from './pages/loginScreen.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import RegisterComplete from './pages/RegisterComplete.jsx'
+import FeedPage from './pages/FeedPage.jsx'
 
 function App() {
   return (
@@ -43,6 +44,12 @@ function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/feed" element={
+            <ProtectedRoute>
+              <FeedPage />
             </ProtectedRoute>
           } />
           <Route path="/profile/:userId" element={
