@@ -75,9 +75,12 @@ export default function FeedPage() {
     return { x, y, ringIndex: currentRing };
   };
 
-  // The precise math to center the 4000px canvas on your screen
-  const startX = -(4000 - window.innerWidth) / 2;
-  const startY = -(4000 - window.innerHeight) / 2;
+  // MATHEMATICALLY PERFECT CENTERING:
+  // window.innerWidth / 2 gives us the exact middle of your monitor.
+  // We subtract 2000 to shift the massive 4000px canvas so its center aligns with your monitor.
+  // We subtract 80px from innerHeight to perfectly account for your header!
+  const startX = (window.innerWidth / 2) - 2000;
+  const startY = ((window.innerHeight - 80) / 2) - 2000;
 
   return (
     <div className="home-container dark page-transition feed-page-container">
@@ -132,11 +135,11 @@ export default function FeedPage() {
         <div className="canvas-container">
           <TransformWrapper
             initialScale={1}
-            minScale={0.1}  /* Let's you zoom way further out */
+            minScale={0.1}
             maxScale={2}
             initialPositionX={startX} 
             initialPositionY={startY}
-            /* REMOVED: centerOnInit={true} so it stops fighting our math! */
+            limitToBounds={false} /* CRITICAL FIX: Stops the library from shoving the canvas to the edges */
             wheel={{ step: 0.1 }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
@@ -147,7 +150,10 @@ export default function FeedPage() {
                   <button className="control-btn" onClick={() => resetTransform()}>Reset</button>
                 </div>
 
-                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                <TransformComponent 
+                  wrapperStyle={{ width: "100%", height: "100%" }}
+                  contentStyle={{ width: "4000px", height: "4000px" }} /* EXPLICIT SIZE: Helps the library calculate correctly */
+                >
                   <div className="feed-environment">
                     
                     <div className="feed-center">

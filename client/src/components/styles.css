@@ -560,8 +560,8 @@ body {
   width: 4000px;
   height: 4000px;
   position: relative;
-background-image: linear-gradient(rgba(167, 139, 250, 0.15) 1px, transparent 1px), 
-                    linear-gradient(90deg, rgba(167, 139, 250, 0.15) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(188, 19, 254, 0.4) 1px, transparent 1px), 
+                    linear-gradient(90deg, rgba(188, 19, 254, 0.4) 1px, transparent 1px);
   background-size: 100px 100px;
 }
 
