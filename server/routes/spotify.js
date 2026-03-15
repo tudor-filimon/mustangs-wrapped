@@ -311,7 +311,7 @@ router.get('/top-tracks', async (req, res, next) => {
     // Helper to fetch top tracks for a given time range
     const fetchTopTracksForRange = async (range) => {
       const resp = await axios.get(
-        `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=$${range}`,
+        `https://api.spotify.com/v1/me/top/tracks?limit=50&time_range=${range}`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       return resp.data?.items || [];

@@ -158,6 +158,22 @@ class ApiClient {
     return this.request('/api/spotify/top-tracks');
   }
 
+  /** Top tracks for wrapped page; time_range: short_term | medium_term | long_term */
+  async getTopTracks(timeRange = 'medium_term') {
+    const q = encodeURIComponent(timeRange);
+    return this.request(`/api/spotify/top-tracks?time_range=${q}`);
+  }
+
+  /** Campus/global top tracks from wrapped aggregation */
+  async getGlobalTopTracks() {
+    return this.request('/api/spotify/global-top-tracks');
+  }
+
+  /** User's saved wrapped snapshot (for playlist fallback when no state) */
+  async getWrappedTopTracks() {
+    return this.request('/api/spotify/wrapped-top-tracks');
+  }
+
   async getSpotifyTopArtists() {
     return this.request('/api/spotify/top-artists');
   }
