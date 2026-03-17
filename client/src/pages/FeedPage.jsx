@@ -75,10 +75,6 @@ export default function FeedPage() {
     return { x, y, ringIndex: currentRing };
   };
 
-  // MATHEMATICALLY PERFECT CENTERING:
-  // window.innerWidth / 2 gives us the exact middle of your monitor.
-  // We subtract 2000 to shift the massive 4000px canvas so its center aligns with your monitor.
-  // We subtract 80px from innerHeight to perfectly account for your header!
   const startX = (window.innerWidth / 2) - 2000;
   const startY = ((window.innerHeight - 80) / 2) - 2000;
 
@@ -100,7 +96,8 @@ export default function FeedPage() {
       {activeModal && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)} style={{ zIndex: 9999 }}>
           <div className="feed-modal-box" onClick={e => e.stopPropagation()}>
-            <button className="close-button" onClick={() => setActiveModal(null)}>×</button>
+            {/* UPDATED: Red circular close button positioned top right */}
+            <button className="red-close-btn" onClick={() => setActiveModal(null)}>✕</button>
             <img 
               src={activeModal.album_image_url} 
               alt={activeModal.song_name} 
@@ -139,7 +136,7 @@ export default function FeedPage() {
             maxScale={2}
             initialPositionX={startX} 
             initialPositionY={startY}
-            limitToBounds={false} /* CRITICAL FIX: Stops the library from shoving the canvas to the edges */
+            limitToBounds={false} 
             wheel={{ step: 0.1 }}
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
@@ -152,7 +149,7 @@ export default function FeedPage() {
 
                 <TransformComponent 
                   wrapperStyle={{ width: "100%", height: "100%" }}
-                  contentStyle={{ width: "4000px", height: "4000px" }} /* EXPLICIT SIZE: Helps the library calculate correctly */
+                  contentStyle={{ width: "4000px", height: "4000px" }} 
                 >
                   <div className="feed-environment">
                     
@@ -175,11 +172,14 @@ export default function FeedPage() {
                           onClick={() => setActiveModal(post)}
                         >
                           <img src={post.album_image_url} alt="album" className="feed-node-image" />
+                          {/* UPDATED: Song name directly under the orbit node */}
+                          <div className="feed-node-label">{post.song_name}</div>
                         </div>
                       );
                     })}
 
-                    {[0, 1, 2, 3].map(ring => {
+                    {/* UPDATED: Only draws 3 rings instead of 4 ([0, 1, 2]) */}
+                    {[0, 1, 2].map(ring => {
                       const radius = 180 + (ring * 140);
                       return (
                         <div 
