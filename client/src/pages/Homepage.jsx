@@ -33,7 +33,7 @@ function HomePage() {
       }
     };
     fetchNow();
-    const id = setInterval(fetchNow, 15000); 
+    const id = setInterval(fetchNow, 5000); 
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
@@ -52,7 +52,9 @@ function HomePage() {
         artist_name: nowPlaying.artists,
         album_image_url: nowPlaying.image,
         spotify_track_id: nowPlaying.track_id,
-        username: name // <-- ADDED: Passes the username to the database
+        username: name,
+        album_name: nowPlaying.album,
+        release_date: nowPlaying.release_date
       });
       setFeedStatus('Successfully sent to feed'); // <-- FIXED: Changed to "feed"
       

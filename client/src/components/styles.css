@@ -506,15 +506,71 @@ body {
 }
 
 .feed-header {
-  padding: 20px 30px;
+  height: 80px; 
+  padding: 0 30px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: rgba(31, 16, 65, 0.2); 
+  backdrop-filter: blur(2px); 
+  pointer-events: none; 
+}
+
+.feed-header-pill {
+  position: absolute;
+  right: 40px; 
+  top: 50%;
+  transform: translateY(-50%);
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1001;
+  pointer-events: auto; 
+}
+
+.feed-back-btn, .feed-title {
+   pointer-events: auto; 
+}
+.pill-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #bc13fe;
+  box-shadow: 0 0 15px rgba(188, 19, 254, 0.5);
+  transition: transform 0.2s ease;
   position: relative;
-  z-index: 50;
-  background: rgba(31, 16, 65, 0.5);
-  backdrop-filter: blur(10px);
-  /* opacity: 0.25; */
+  z-index: 2;
+}
+
+
+@keyframes pillPulse {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+}
+
+.pill-glow-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #bc13fe;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pillPulse 2s infinite ease-out;
+}
+
+.feed-header-pill:hover .pill-art {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px rgba(188, 19, 254, 0.8);
 }
 
 .feed-back-btn {
@@ -526,14 +582,21 @@ body {
   font-weight: 600;
   color: #581c87;
   cursor: pointer;
+  pointer-events: auto; /* Re-enables clicking the button */
 }
 
+
 .feed-title {
+  position: absolute;
+  left: 50%;
+  top: 50%; 
+  transform: translate(-50%, -50%);
   font-family: "Jersey 25", sans-serif;
-  font-size: 40px;
+  font-size: 70px;
   color: white;
   margin: 0;
   text-shadow: 0 0 10px #bc13fe;
+  pointer-events: auto;
 }
 
 .feed-loading-text {
@@ -544,14 +607,15 @@ body {
   font-size: 14px;
 }
 
-/* Canvas & Panning Area */
+
 .canvas-container {
-  flex: 1;
   width: 100%;
+  height: 100vh;
   cursor: grab;
   position: relative;
   z-index: 5;
 }
+
 
 .canvas-container:active {
   cursor: grabbing;
@@ -586,6 +650,17 @@ body {
   cursor: pointer;
   font-size: 18px;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px; 
+}
+
+
+.control-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* Center Profile Node */
@@ -601,19 +676,22 @@ body {
 }
 
 .feed-center-avatar {
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   border-radius: 50%;
   border: 4px solid #bc13fe;
   box-shadow: 0 0 50px rgba(188, 19, 254, 0.8);
   object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 .feed-center-label {
   margin-top: 15px;
   font-family: 'Press Start 2P', cursive;
   color: white;
-  font-size: 12px;
+  font-size: 16px;
   background: rgba(0,0,0,0.5);
   padding: 8px 12px;
   border-radius: 10px;
@@ -635,8 +713,8 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 60px;
-  height: 60px;
+  width: 100px;
+  height: 100px;
   border-radius: 12px;
   cursor: pointer;
   z-index: 20;
@@ -644,9 +722,22 @@ body {
   animation: floatNode 4s ease-in-out infinite;
 }
 
+
+/* Fixed the hover bug. Used colors and optics ins tead of transformations for the hover */
 .feed-orbit-node:hover {
-  transform: scale(1.1) !important; /* Forces scale on hover overriding inline transform momentarily if needed, though inline usually wins. Handled in JS */
-  z-index: 30;
+  z-index: 30; 
+}
+
+.feed-orbit-node:hover .feed-node-image {
+  box-shadow: 0 0 35px rgba(188, 19, 254, 0.9); 
+  filter: brightness(1.2); 
+  border-color: #d8b4fe; 
+}
+
+
+.feed-orbit-node:hover .feed-node-label {
+  background: rgba(188, 19, 254, 0.9);
+  color: white;
 }
 
 .feed-node-image {
@@ -656,6 +747,9 @@ body {
   object-fit: cover;
   border: 2px solid #a78bfa;
   box-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
 /* Feed Modal */
@@ -692,7 +786,18 @@ body {
   font-family: 'Inter', sans-serif;
   font-size: 16px;
   color: #d8b4fe;
-  margin: 0 0 25px 0;
+  margin: 0 0 12px 0;
+}
+.feed-modal-detail {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #a78bfa;
+  margin: 0 0 6px 0;
+}
+
+/* Just used to create a proper margin after the last detail added to the mdodal */
+.feed-modal-detail:last-of-type {
+  margin-bottom: 25px; 
 }
 
 .feed-modal-actions {
@@ -713,6 +818,124 @@ body {
   cursor: pointer;
 }
 
+
+.feed-list-modal {
+  position: relative;
+  background: linear-gradient(135deg, rgba(31, 16, 65, 0.98), rgba(91, 48, 133, 0.95));
+  border: 2px solid #a78bfa;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+.modal-corner-x {
+  position: absolute !important;
+  top: -15px !important; 
+  right: -15px !important;
+  width: 36px;
+  height: 36px;
+  background: #ef4444;
+  border: 2px solid white; 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.list-modal-header {
+  padding: 25px 25px 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+}
+
+.list-modal-header h2 {
+  color: white;
+  margin: 0;
+  font-family: 'Jersey 25', sans-serif;
+  font-size: 32px;
+}
+
+.list-modal-content {
+  padding: 10px 0;
+  overflow-y: auto; /* Scrollable list */
+  flex: 1;
+}
+
+.list-item-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 25px;
+  transition: background 0.2s;
+}
+
+.list-item-row:hover {
+  background: rgba(167, 139, 250, 0.1);
+}
+
+.list-item-art {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.list-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.list-item-song {
+  color: white;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-item-artist {
+  color: #d8b4fe;
+  font-size: 12px;
+}
+
+.list-item-meta {
+  color: #a78bfa;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.list-remove-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.list-remove-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.feed-center.owner-clickable {
+  cursor: pointer;
+}
+
+.feed-center.owner-clickable:hover .feed-center-avatar {
+  border-color: white;
+  transform: scale(1.05);
+}
+
 .feed-remove-btn {
   padding: 12px;
   border-radius: 12px;
@@ -728,12 +951,12 @@ body {
 
 .feed-node-label {
   position: absolute;
-  bottom: -22px;
+  bottom: -32px;
   left: 50%;
   transform: translateX(-50%);
   color: white;
   font-family: 'Inter', sans-serif;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   background: rgba(0, 0, 0, 0.7);
@@ -744,6 +967,56 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
+
+
+.list-modal-header-combined {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  border-bottom: 1px solid rgba(167, 139, 250, 0.2);
+}
+
+.list-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.list-modal-header-combined h2 {
+  margin: 0;
+  font-family: 'Jersey 25', sans-serif;
+  font-size: 36px;
+  color: white;
+}
+
+
+.list-search-input, .list-filter-select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  padding: 10px 15px;
+  border-radius: 10px;
+  color: white;
+  font-family: 'Inter', sans-serif;
+}
+
+.list-search-input { flex: 2; }
+.list-filter-select { flex: 1; cursor: pointer; }
+
+.list-search-input:focus {
+  outline: none;
+  border-color: #bc13fe;
+  box-shadow: 0 0 10px rgba(188, 19, 254, 0.3);
+}
+
+
+/* Just for formatting purposes put by me */
+.empty-list-text {
+  padding: 40px;
+  text-align: center;
+  color: #a78bfa;
+  font-style: italic;
+  opacity: 0.6;
+}
 
 .red-close-btn {
   position: absolute;

@@ -5,14 +5,13 @@ const router = express.Router();
 
 /**
  * GET /api/feed
- * Fetches all feed posts to populate the galaxy
+ * Fetches all feed posts
  */
 router.get('/', async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) return res.status(401).json({ error: 'No token' });
     
-//    Here will add a where clause later once following is fully BUILT
     const { data, error } = await supabaseAdmin
       .from('feed_posts')
       .select('*')
@@ -20,9 +19,7 @@ router.get('/', async (req, res, next) => {
 
     if (error) throw error;
     res.json({ posts: data });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 });
 
 /**
@@ -38,9 +35,11 @@ router.post('/', async (req, res, next) => {
 
     if (authError || !user) return res.status(401).json({ error: 'Invalid or expired token' });
 
-    const { song_name, artist_name, album_image_url, spotify_track_id, username } = req.body;
+    // EXTRACT GENRE
+    const { song_name, artist_name, album_image_url, spotify_track_id, username, album_name, release_date, genre } = req.body;
     if (!song_name || !artist_name || !spotify_track_id) return res.status(400).json({ error: 'Missing required song data' });
 
+    // INSERT GENRE
     const { data, error } = await supabaseAdmin
       .from('feed_posts')
       .insert({
@@ -49,21 +48,21 @@ router.post('/', async (req, res, next) => {
         song_name,
         artist_name,
         album_image_url,
-        spotify_track_id
+        spotify_track_id,
+        album_name,
+        release_date,
+        genre 
       })
       .select()
       .single();
 
     if (error) throw error;
     res.status(201).json({ message: 'Successfully sent to feed', post: data });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 });
 
 /**
  * DELETE /api/feed/:id
- * Removes a post from the feed
  */
 router.delete('/:id', async (req, res, next) => {
   try {
@@ -74,7 +73,6 @@ router.delete('/:id', async (req, res, next) => {
 
     if (authError || !user) return res.status(401).json({ error: 'Invalid token' });
 
-    // Ensure the user deleting it is the user who posted it!
     const { error } = await supabaseAdmin
       .from('feed_posts')
       .delete()
@@ -82,10 +80,8 @@ router.delete('/:id', async (req, res, next) => {
       .eq('user_id', user.id);
 
     if (error) throw error;
-    res.json({ message: 'Successfully removed from orbit' });
-  } catch (err) {
-    next(err);
-  }
+    res.json({ message: 'Successfully removed' });
+  } catch (err) { next(err); }
 });
 
 export default router;

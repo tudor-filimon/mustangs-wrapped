@@ -200,6 +200,14 @@ class ApiClient {
   async deleteFeedPost(postId) {
     return this.request(`/api/feed/${postId}`, { method: 'DELETE' });
   }
+
+ 
+// used to sync the genres of all posts of a user
+  async syncGenres() {
+    return this.request('/api/spotify/sync-genres', { method: 'POST' });
+  }
+
+
   
 }
 
