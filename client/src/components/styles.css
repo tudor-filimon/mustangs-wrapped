@@ -514,6 +514,7 @@ body {
   z-index: 50;
   background: rgba(31, 16, 65, 0.5);
   backdrop-filter: blur(10px);
+  /* opacity: 0.25; */
 }
 
 .feed-back-btn {
@@ -618,15 +619,16 @@ body {
   border-radius: 10px;
 }
 
-/* Orbiting Posts */
+/* The Rings around each person where the songs are located */
 .orbit-ring-line {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px dashed rgba(167, 139, 250, 0.2);
+  border: 2px dashed rgba(188, 19, 254, 0.6);
   pointer-events: none;
+  box-shadow: 0 0 15px rgba(188, 19, 254, 0.2), inset 0 0 15px rgba(188, 19, 254, 0.2);
 }
 
 .feed-orbit-node {
@@ -721,6 +723,52 @@ body {
   font-weight: bold;
   font-size: 14px;
   cursor: pointer;
+}
+
+
+.feed-node-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 6px;
+  pointer-events: none; 
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+
+.red-close-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: #ef4444;
+  color: white;
+  border: 2px solid white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  transition: transform 0.2s ease, background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.red-close-btn:hover {
+  transform: scale(1.15);
+  background: #dc2626; /* Slightly darker red on hover */
 }
 
 @keyframes floatNode {
