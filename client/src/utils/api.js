@@ -100,15 +100,6 @@ class ApiClient {
     return this.request('/api/spotify/current-playing');
   }
 
-  // --- NEW ADDITION ---
-  // Sends a song to the global feed
-  async postToFeed(postData) {
-    return this.request('/api/feed', {
-      method: 'POST',
-      body: JSON.stringify(postData)
-    });
-  }
-
   // Friends endpoints
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');
@@ -182,7 +173,7 @@ class ApiClient {
     return this.request('/api/spotify/stats');
   }
 
-  
+  // Feed Endpoints
   async postToFeed(postData) {
     return this.request('/api/feed', {
       method: 'POST',
@@ -190,25 +181,13 @@ class ApiClient {
     });
   }
 
-  
-  // Fetches posts for the galaxy canvas
   async getFeedPosts() {
     return this.request('/api/feed', { method: 'GET' });
   }
 
-  // Deletes a specific post from the user's orbit
   async deleteFeedPost(postId) {
     return this.request(`/api/feed/${postId}`, { method: 'DELETE' });
   }
-
- 
-// used to sync the genres of all posts of a user
-  async syncGenres() {
-    return this.request('/api/spotify/sync-genres', { method: 'POST' });
-  }
-
-
-  
 }
 
 export default new ApiClient();

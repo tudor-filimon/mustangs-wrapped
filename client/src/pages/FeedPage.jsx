@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import '../components/styles.css';
@@ -7,6 +7,17 @@ import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
 const defaultAvatar = '/src/assets/images/default-avatar.png';
+
+const getEra = (releaseDate) => {
+  if (!releaseDate) return 'Unknown';
+  const year = parseInt(releaseDate.substring(0, 4), 10);
+  if (year >= 2020) return '2020s';
+  if (year >= 2010) return '2010s';
+  if (year >= 2000) return '2000s';
+  if (year >= 1990) return '90s';
+  if (year >= 1980) return '80s';
+  return 'Classics';
+};
 
 export default function FeedPage() {
   const navigate = useNavigate();
@@ -20,8 +31,12 @@ export default function FeedPage() {
   const [nowPlaying, setNowPlaying] = useState(null);
   const [showNowPlayingModal, setShowNowPlayingModal] = useState(false);
   const [feedStatus, setFeedStatus] = useState('');
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterGenre, setFilterGenre] = useState('all');
+  const [filterEra, setFilterEra] = useState('all');
+
+  // We use a ref for the grid so we can update it at 60fps without React lag
+  const gridRef = useRef(null);
 
   const isOwner = useMemo(() => {
     if (!posts.length || !user?.id) return true;
@@ -52,31 +67,50 @@ export default function FeedPage() {
     } catch (error) { } finally { setLoading(false); }
   };
 
-  const availableGenres = useMemo(() => {
-    const allGenres = posts.flatMap(p => p.genre ? p.genre.split(', ') : []);
-    return [...new Set(allGenres)].sort();
+  const availableEras = useMemo(() => {
+    const eras = posts.map(p => getEra(p.release_date));
+    return [...new Set(eras)].sort().reverse(); 
   }, [posts]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
       const matchesSearch = post.song_name.toLowerCase().includes(searchTerm.toLowerCase()) || post.artist_name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesGenre = filterGenre === 'all' || (post.genre && post.genre.toLowerCase().includes(filterGenre.toLowerCase()));
-      return matchesSearch && matchesGenre;
+      const matchesEra = filterEra === 'all' || getEra(post.release_date) === filterEra;
+      return matchesSearch && matchesEra;
     });
-  }, [posts, searchTerm, filterGenre]);
+  }, [posts, searchTerm, filterEra]);
 
   const handleSendToFeed = async () => {
     if (!nowPlaying || !nowPlaying.track_id) return;
+
+    const isAlreadyInFeed = posts.some(p => p.spotify_track_id === nowPlaying.track_id);
+    if (isAlreadyInFeed) {
+      setFeedStatus('Already in Feed!');
+      setTimeout(() => setFeedStatus(''), 3000);
+      return;
+    }
+
     setFeedStatus('Loading...');
     try {
       await api.postToFeed({ 
-        song_name: nowPlaying.song, artist_name: nowPlaying.artists, album_image_url: nowPlaying.image, 
-        spotify_track_id: nowPlaying.track_id, username: name, album_name: nowPlaying.album, 
-        release_date: nowPlaying.release_date, genre: nowPlaying.genre 
+        song_name: nowPlaying.song, 
+        artist_name: nowPlaying.artists, 
+        album_image_url: nowPlaying.image, 
+        spotify_track_id: nowPlaying.track_id, 
+        username: name, 
+        album_name: nowPlaying.album, 
+        release_date: nowPlaying.release_date 
       });
       setFeedStatus('Added!'); fetchPosts(); 
       setTimeout(() => { setFeedStatus(''); setShowNowPlayingModal(false); }, 2000);
-    } catch (error) { setFeedStatus('Error'); setTimeout(() => setFeedStatus(''), 3000); }
+    } catch (error) { 
+      if (error.message && error.message.includes('already in feed')) {
+        setFeedStatus('Already in Feed!');
+      } else {
+        setFeedStatus('Error');
+      }
+      setTimeout(() => setFeedStatus(''), 3000); 
+    }
   };
 
   const handleRemovePost = async (postId) => {
@@ -91,14 +125,47 @@ export default function FeedPage() {
     return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
   };
 
-  const startX = (window.innerWidth / 2) - 2000;
-  const startY = ((window.innerHeight - 80) / 2) - 2000;
-  const maxRing = posts.length > 0 ? Math.floor(posts.length / 5) : 2; 
-  const ringsArray = Array.from({ length: Math.max(3, maxRing + 2) }, (_, i) => i);
+  // We keep a safe internal bounds size, but limitToBounds={false} and our optical illusion grid make it physically infinite
+  const CANVAS_SIZE = 4000; 
+  const startX = (window.innerWidth / 2) - (CANVAS_SIZE / 2);
+  const startY = ((window.innerHeight - 80) / 2) - (CANVAS_SIZE / 2);
+  
+  // EXACT RING CALCULATION FIX: Only draws the exact amount of rings needed to hold your current posts
+  const neededRings = useMemo(() => {
+    let required = 0;
+    let counted = 0;
+    let r = 0;
+    while (counted < posts.length) {
+      counted += 5 + (r * 5);
+      required = r + 1;
+      r++;
+    }
+    return Math.max(1, required); // Always draws at least 1 ring, but stops immediately after needed rings
+  }, [posts.length]);
+
+  const ringsArray = Array.from({ length: neededRings }, (_, i) => i);
 
   return (
     <div className="home-container dark page-transition feed-page-container">
       <AnimatedBackground />
+      
+      {/* THE INFINITE GRID TRICK: Costs zero memory, scales and pans flawlessly */}
+      <div 
+        ref={gridRef}
+        style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: '100px 100px',
+          backgroundPosition: `${startX}px ${startY}px`
+        }}
+      />
+
       <header className="feed-header">
         <button className="feed-back-btn" onClick={() => navigate('/home')}>← Back</button>
         <h1 className="feed-title">{name}'s Feed</h1>
@@ -110,6 +177,7 @@ export default function FeedPage() {
         )}
       </header>
 
+      {/* Modals ... */}
       {showNowPlayingModal && nowPlaying && (
         <div className="modal-overlay" onClick={() => setShowNowPlayingModal(false)}>
           <div className="feed-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -117,8 +185,15 @@ export default function FeedPage() {
             <img src={nowPlaying.image} alt={nowPlaying.song} className="feed-modal-image" />
             <h3 className="feed-modal-song">{nowPlaying.song}</h3>
             <p className="feed-modal-artist">{nowPlaying.artists}</p>
-            <p className="feed-modal-detail">Preview Genre: {nowPlaying.genre}</p> 
-            <button className="feed-spotify-btn" onClick={handleSendToFeed} disabled={feedStatus === 'Loading...' || feedStatus === 'Added!'} style={{ backgroundColor: feedStatus === 'Added!' ? '#9333ea' : '#1DB954' }}> {feedStatus || 'Add to Feed'} </button>
+            <p className="feed-modal-detail">Era: {getEra(nowPlaying.release_date)}</p> 
+            <button 
+              className="feed-spotify-btn" 
+              onClick={handleSendToFeed} 
+              disabled={feedStatus === 'Loading...' || feedStatus === 'Added!' || feedStatus === 'Already in Feed!'} 
+              style={{ backgroundColor: feedStatus === 'Added!' ? '#9333ea' : feedStatus === 'Already in Feed!' ? '#6b7280' : '#1DB954' }}
+            > 
+              {feedStatus || 'Add to Feed'} 
+            </button>
           </div>
         </div>
       )}
@@ -131,9 +206,9 @@ export default function FeedPage() {
               <h2>{isOwner ? 'Browse Your Feed' : `Browse ${name}'s Feed`}</h2>
               <div className="list-controls">
                 <input type="text" placeholder="Search..." className="list-search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                <select className="list-filter-select" value={filterGenre} onChange={(e) => setFilterGenre(e.target.value)}>
-                  <option value="all">All Genres</option>
-                  {availableGenres.map(g => ( <option key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</option> ))}
+                <select className="list-filter-select" value={filterEra} onChange={(e) => setFilterEra(e.target.value)}>
+                  <option value="all">All Eras</option>
+                  {availableEras.map(era => ( <option key={era} value={era}>{era}</option> ))}
                 </select>
               </div>
             </div>
@@ -142,7 +217,11 @@ export default function FeedPage() {
                 filteredPosts.map((post) => (
                   <div key={post.id} className="list-item-row">
                     <img src={post.album_image_url} alt="art" className="list-item-art" />
-                    <div className="list-item-info"> <span className="list-item-song">{post.song_name}</span> <span className="list-item-artist">{post.artist_name}</span> <span className="list-item-meta">{post.genre || 'unknown'}</span> </div>
+                    <div className="list-item-info"> 
+                      <span className="list-item-song">{post.song_name}</span> 
+                      <span className="list-item-artist">{post.artist_name}</span> 
+                      <span className="list-item-meta">{getEra(post.release_date)}</span> 
+                    </div>
                     {post.user_id === user?.id && <button className="list-remove-btn" onClick={() => handleRemovePost(post.id)} disabled={deleteLoading}>Remove</button>}
                   </div>
                 ))
@@ -159,9 +238,9 @@ export default function FeedPage() {
             <img src={activeModal.album_image_url} alt={activeModal.song_name} className="feed-modal-image" draggable={false} />
             <h3 className="feed-modal-song">{activeModal.song_name}</h3>
             <p className="feed-modal-artist">{activeModal.artist_name}</p>
-            <p className="feed-modal-detail">Genre: {activeModal.genre || 'Unknown'}</p>
+            <p className="feed-modal-detail">Era: {getEra(activeModal.release_date)}</p>
             <div className="feed-modal-actions">
-              <button className="feed-spotify-btn" onClick={() => window.open(`https://open.spotify.com/track/${activeModal.spotify_track_id}`, '_blank')}>Listen on Spotify</button>
+              <button className="feed-spotify-btn" onClick={() => window.open('https://' + 'open.spotify.com' + '/track/' + activeModal.spotify_track_id, '_blank')}>Listen on Spotify</button>
               {activeModal.user_id === user?.id && <button className="feed-remove-btn" onClick={() => handleRemovePost(activeModal.id)} disabled={deleteLoading}>Remove Post</button>}
             </div>
           </div>
@@ -169,19 +248,42 @@ export default function FeedPage() {
       )}
 
       {!loading && (
-        <div className="canvas-container">
-          <TransformWrapper initialScale={1} minScale={0.1} maxScale={2} initialPositionX={startX} initialPositionY={startY} limitToBounds={false} wheel={{ step: 0.1 }}>
+        <div className="canvas-container" style={{ position: 'relative', zIndex: 1 }}>
+          <TransformWrapper 
+            initialScale={1} 
+            minScale={0.1} 
+            maxScale={2} 
+            initialPositionX={startX} 
+            initialPositionY={startY} 
+            limitToBounds={false} 
+            wheel={{ step: 0.1 }}
+            onTransformed={(ref) => {
+              // Ties the fixed grid to your panning and zooming at 60fps
+              if (gridRef.current) {
+                const { positionX, positionY, scale } = ref.state;
+                gridRef.current.style.backgroundPosition = `${positionX}px ${positionY}px`;
+                gridRef.current.style.backgroundSize = `${100 * scale}px ${100 * scale}px`;
+              }
+            }}
+          >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
                 <div className="canvas-controls"> <button className="control-btn" onClick={() => zoomIn()}>+</button> <button className="control-btn" onClick={() => zoomOut()}>-</button> <button className="control-btn" onClick={() => resetTransform()}><img src="src/assets/images/HomeViewFeedPage.svg" alt="Home"/></button> </div>
-                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: "4000px", height: "4000px" }}>
-                  <div className="feed-environment">
+                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: `${CANVAS_SIZE}px`, height: `${CANVAS_SIZE}px` }}>
+                  
+                  {/* Applied backgroundImage: 'none' to hide any old, cut-off grid from the original CSS */}
+                  <div className="feed-environment" style={{ width: '100%', height: '100%', position: 'relative', backgroundImage: 'none' }}>
                     <div className="feed-center owner-clickable" onClick={() => setShowListModal(true)}> <img src={avatar} alt="User" className="feed-center-avatar" draggable={false} /> <div className="feed-center-label">{name}</div> </div>
+                    
                     {posts.map((post, index) => {
                       const { x, y } = calculatePosition(index);
                       return ( <div key={post.id} className="feed-orbit-node" style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }} onClick={() => setActiveModal(post)}> <img src={post.album_image_url} alt="album" className="feed-node-image" draggable={false} /> <div className="feed-node-label">{post.song_name}</div> </div> );
                     })}
-                    {ringsArray.map(ring => { const radius = 260 + (ring * 220); return <div key={ring} className="orbit-ring-line" style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }} />; })}
+                    
+                    {ringsArray.map(ring => { 
+                      const radius = 260 + (ring * 220); 
+                      return <div key={ring} className="orbit-ring-line" style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }} />; 
+                    })}
                   </div>
                 </TransformComponent>
               </>
