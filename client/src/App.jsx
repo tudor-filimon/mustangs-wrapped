@@ -13,6 +13,7 @@ import MustangWrappedLogin from './pages/loginScreen.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import RegisterComplete from './pages/RegisterComplete.jsx'
 import FeedPage from './pages/FeedPage.jsx'
+import CampusMaps from './pages/CampusMaps'
 
 function App() {
   return (
@@ -60,6 +61,11 @@ function App() {
           <Route path="/friends" element={
             <ProtectedRoute>
               <FriendsPage />
+            </ProtectedRoute>
+          } />
+          <Route path='/campus-maps' element={
+            <ProtectedRoute>
+                <CampusMaps />
             </ProtectedRoute>
           } />
           <Route path="/coming-soon" element={

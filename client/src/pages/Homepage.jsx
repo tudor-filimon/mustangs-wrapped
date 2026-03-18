@@ -159,7 +159,7 @@ function HomePage() {
 
       <main className="main-layout">
         <div className="row top-row">
-          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
+          <button className="pill-btn" onClick={() => navigate('/campus-maps')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
           <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\AvatarIcon.svg" alt="Avatar Icon"/>Avatar</button>
         </div>
 
