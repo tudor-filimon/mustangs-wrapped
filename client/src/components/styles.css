@@ -17,24 +17,19 @@ body {
   display: flex;
   flex-direction: column;
   transition: background 0.3s ease;
-  position: relative; /* Added to act as anchor for absolute children */
+  position: relative; 
 }
 
-/* subset mode for dark mode, set as a different mode of the same home container(think the way hover works) */
 .home-container.dark {
   background: linear-gradient(180deg, #1f1041 0%, #9065bc 100%);
   color: white;
 }
 
-/* subset mode for light mode, set as a different mode of the home container as well */
 .home-container.light {
   background: linear-gradient(180deg, #9F7AEA 0%, #381d6c 100%);
   color: #5b3085; 
 }
 
-/* Styling for all the header components (Text for username, buttons, and various different icons for spotify, WFN, apple logo, etc) 
-   Also includes styling for the dark/light buttons
-*/
 .header {
   height: 80px;
   display: flex;
@@ -42,10 +37,9 @@ body {
   align-items: center;
   padding: 0 30px;
   position: relative; 
-  z-index: 2; /* Ensures header sits above floating icons */
+  z-index: 2; 
 }
 
-/* Search bar styling, just simple styling to make rounded and give a bit of dynamic sense with a backdrop filter */
 .search-bar {
   background: rgba(151, 53, 216, 0.2);
   border-radius: 30px;
@@ -56,13 +50,10 @@ body {
   width: 320px;
   backdrop-filter: blur(25px);
 }
-/* For the input line thingy, done with GEMINI */
 .search-bar input { background: transparent; border: none; color: white; outline: none; width: 100%; }
 
-/* for the text that is there before any input */
 .search-bar input::placeholder { color: rgba(255,255,255,0.7); }
 
-/*Edits the gap between each of the icons in the top right corner*/
 .header-right { display: flex; gap: 12px; }
 
 .header-center {
@@ -71,7 +62,6 @@ body {
   justify-content: center;
   gap: 12px;
 }
-
 
 .profile-pic-container {
   width: 40px;
@@ -89,10 +79,6 @@ body {
   display: block;
 }
 
-
-/* rules for the 3 icons; spotify, western, and WFN
-  KEEPS HOW THEY look very consistent
-*/
 .circle-icon {
   display: flex; align-items: center; justify-content: center;
   font-weight: bold; font-size: 0.9rem;
@@ -102,12 +88,10 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   width: 50px;
   height: 50px;
-/* Makes container circular like logo */
   border-radius: 50%;
   overflow: hidden; 
 }
 
-/* forces the actual image inside the div to fit that mold */
 .circle-icon img {
   width: 100%;      
   height: 100%;     
@@ -118,39 +102,27 @@ body {
   width: 20px;
   height: 20px;
   object-fit: cover;
-
 }
 
-/* Hover rules for all 3 of the circle icon buttons */
 .circle-icon:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); 
 }
 
-
-/* Container for the WFN logo in top right. Size can be played with and if color interferes can be removed */
 .circle-icon.wfn { 
   background: #ffffff; 
   color: #5b3085; 
 }
 
-
-
-/* Container for the Mustangs Logo in the top right.changes the background colors */
 .circle-icon.mustangs { 
   background: #5b3085; 
   color: #5b3085; 
 }
 
-/* Container for the Spotify Logo in the top right.changes the background colors*/
 .circle-icon.spotify { 
   background: #e8def800; 
 }
 
-
-
-
-/* Replica of figma orbital system, Gemini helped build this part */
 .main-layout {
   flex: 1;
   display: flex;
@@ -159,10 +131,9 @@ body {
   align-items: center;
   padding-bottom: 80px;
   position: relative;
-  z-index: 2; /* Ensures main content sits above floating icons */
+  z-index: 2; 
 }
 
-/* General rule for all rows to keep shape */
 .row {
   display: flex;
   justify-content: center;
@@ -170,13 +141,9 @@ body {
   width: 100%;
 }
 
-/* Campus maps and Top Songs Row */
 .top-row { margin-bottom: 20px; gap: 40px; }
-
-/* Settings and Mustang Wrapped Row */
 .bottom-row { margin-top: 20px; gap: 40px; }
 
-/* Account and friends row */
 .middle-row {
   display: flex;
   flex-direction: row; 
@@ -187,7 +154,6 @@ body {
   width: 100%;
 }
 
-/* Title rules for the whole title, sets font, box shadow, size , weight, and color */
 .title {
   font-family: "Jersey 25", sans-serif;
   font-size: 85px; 
@@ -199,7 +165,6 @@ body {
   text-shadow: 4px 4px 0px #2e1052, 0 0 20px rgba(138, 56, 245, 0.4);
 }
 
-/* Rules for each individual letter, not super neccessary can put in main css module but added here for organization */
 .title span {
   text-align: center;   
   transition: font-weight 0.3s ease, color 0.3s ease, transform 0.3s ease;
@@ -211,7 +176,6 @@ body {
   height: 40px;
 }
 
-/* Hover rules for each individual letter, turns purple and gets bigger. Also goes up in the y coordinate 20px */
 .title span:hover {
   text-align: center;
   font-weight: 900;       
@@ -223,7 +187,6 @@ body {
     0 0 12px rgb(252, 249, 247);
 }
 
-/* 7. BUTTONS */
 .pill-btn {
   border: none;
   border-radius: 60px;
@@ -244,7 +207,6 @@ body {
 .pill-btn:hover { transform: translateY(-3px); }
 .side-btn { padding: 25px 50px; }
 
-/* New rule for the circular toggle button */
 .theme-toggle {
   width: 45px;       
   height: 45px;      
@@ -258,45 +220,37 @@ body {
   aspect-ratio: 1/1; 
 }
 
-
-
-/* Dark Mode Buttons (Purple) */
 .home-container.dark .pill-btn {
-  background-color: #552d87; /* Deep Purple */
+  background-color: #552d87; 
   color: white;
 }
 .home-container.dark .pill-btn:hover { background-color: #6a3da0; }
 
-/* This switches the icons in the button main screen to white when its in dark mode */
 .home-container.dark .pill-btn img,
 .home-container.dark .side-btn img {
   filter: brightness(0) invert(1);
 }
 
-/* Light Mode Buttons (White) */
 .home-container.light .pill-btn {
   background-color: #ffffff; 
   color: #4a2c7a; 
 }
 .home-container.light .pill-btn:hover { background-color: #f0f0f0; }
 
-/* This switches colours of all the icons inside the button from white to purple bacically using a hue rotate and playing with the brightness */
 .home-container.light .pill-btn img,
 .home-container.light .side-btn img {
   filter: invert(22%) sepia(58%) saturate(2874%) hue-rotate(253deg) brightness(40%) contrast(90%);
 }
 
-/* 8. FOOTER */
 .now-playing {
   position: absolute; bottom: 0; width: 100%; height: 80px;
   display: flex; justify-content: space-between; align-items: center;
   padding: 0 40px;
   border-top: 1px solid rgba(255,255,255,0.1);
   backdrop-filter: blur(10px);
-  z-index: 2; /* Ensures footer sits above floating icons */
+  z-index: 2; 
 }
 
-/* Footer Theme Logic */
 .home-container.dark .now-playing { background: rgba(46, 16, 82, 0.4); }
 .home-container.light .now-playing { background: rgba(255, 255, 255, 0.3); }
 
@@ -326,9 +280,6 @@ body {
   transform: scale(1.2);
 }
 
-/* === NEW: Floating Background Animation === */
-
-/* Ensures the floating icons stay behind the buttons and text */
 .floating-bg-container {
   position: absolute;
   top: 0;
@@ -336,11 +287,10 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: 0; /* Behind everything else */
-  pointer-events: none; /* Allows you to click buttons "through" the icons */
+  z-index: 0; 
+  pointer-events: none; 
 }
 
-/* Playlist page: keep animated background fixed while content scrolls */
 .playlist-page {
   height: auto;
   min-height: 100vh;
@@ -361,24 +311,18 @@ body {
   z-index: 1;
 }
 
-/* The individual floating item */
 .floater {
   position: absolute;
   width: 60px; 
   height: 60px; 
   opacity: 0.2; 
   filter: blur(2px); 
-  
-  /* The "Smart Animate" logic: Move slowly over 8 seconds */
   transition: transform 8000ms ease-out;
-  
-  /* Center the icon/emoji inside the div */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* OPTIONAL: If you switch to SVGs later, this ensures they fit */
 .floater img, .floater svg {
   width: 100%;
   height: 100%;
@@ -401,8 +345,6 @@ body {
   width: 100%; 
 }
 
-
-/* This makes a modal overlay for the image created to sit on top of the home screen */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -410,14 +352,13 @@ body {
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px); /* Blurs the content behind it */
+  backdrop-filter: blur(8px); 
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999; 
   animation: fadeIn 1s ease;
 }
-
 
 .modal-content {
   position: relative;
@@ -427,7 +368,6 @@ body {
   animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
 
-/* for the actual image of the photo */
 .modal-content img {
   width: 100%;
   height: auto;
@@ -435,7 +375,6 @@ body {
   border: 4px solid white;
 }
 
-/* for the x button */
 .close-modal-btn {
   position: absolute;
   top: 0;
@@ -454,17 +393,14 @@ body {
   transition: transform 0.2s ease;
 }
 
-/* x button hover */
 .close-modal-btn:hover {
   transform: translate(40%, -40%) scale(1.1);
   background: #f3e8ff;
 }
 
-/* Animations */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes scaleUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* Coming Soon page – same font as Mustang Wrapped title */
 .coming-soon-content {
   position: relative;
   z-index: 1;
@@ -505,10 +441,12 @@ body {
   flex-direction: column;
 }
 
+/* --- Feed Header Layout --- */
 .feed-header {
   height: 80px; 
-  padding: 0 30px;
+  padding: 0 40px; 
   display: flex;
+  justify-content: space-between; 
   align-items: center;
   position: absolute;
   top: 0;
@@ -520,11 +458,17 @@ body {
   pointer-events: none; 
 }
 
+.feed-header-left,
+.feed-header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  pointer-events: auto;
+}
+
+/* THE FIX: Absolute positioning, right/top properties completely removed from the pill */
 .feed-header-pill {
-  position: absolute;
-  right: 40px; 
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
   width: 54px;
   height: 54px;
   display: flex;
@@ -538,6 +482,7 @@ body {
 .feed-back-btn, .feed-title {
    pointer-events: auto; 
 }
+
 .pill-art {
   width: 100%;
   height: 100%;
@@ -549,7 +494,6 @@ body {
   position: relative;
   z-index: 2;
 }
-
 
 @keyframes pillPulse {
   0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
@@ -582,9 +526,8 @@ body {
   font-weight: 600;
   color: #581c87;
   cursor: pointer;
-  pointer-events: auto; /* Re-enables clicking the button */
+  pointer-events: auto; 
 }
-
 
 .feed-title {
   position: absolute;
@@ -607,7 +550,6 @@ body {
   font-size: 14px;
 }
 
-
 .canvas-container {
   width: 100%;
   height: 100vh;
@@ -615,7 +557,6 @@ body {
   position: relative;
   z-index: 5;
 }
-
 
 .canvas-container:active {
   cursor: grabbing;
@@ -656,14 +597,12 @@ body {
   padding: 8px; 
 }
 
-
 .control-btn img {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-/* Center Profile Node */
 .feed-center {
   position: absolute;
   top: 50%;
@@ -697,7 +636,6 @@ body {
   border-radius: 10px;
 }
 
-/* The Rings around each person where the songs are located */
 .orbit-ring-line {
   position: absolute;
   top: 50%;
@@ -722,8 +660,6 @@ body {
   animation: floatNode 4s ease-in-out infinite;
 }
 
-
-/* Fixed the hover bug. Used colors and optics ins tead of transformations for the hover */
 .feed-orbit-node:hover {
   z-index: 30; 
 }
@@ -733,7 +669,6 @@ body {
   filter: brightness(1.2); 
   border-color: #d8b4fe; 
 }
-
 
 .feed-orbit-node:hover .feed-node-label {
   background: rgba(188, 19, 254, 0.9);
@@ -752,7 +687,6 @@ body {
   pointer-events: none;
 }
 
-/* Feed Modal */
 .feed-modal-box {
   background: linear-gradient(135deg, rgba(91, 48, 133, 0.95), rgba(31, 16, 65, 0.98));
   border: 2px solid #a78bfa;
@@ -795,7 +729,6 @@ body {
   margin: 0 0 6px 0;
 }
 
-/* Just used to create a proper margin after the last detail added to the mdodal */
 .feed-modal-detail:last-of-type {
   margin-bottom: 25px; 
 }
@@ -817,7 +750,6 @@ body {
   font-size: 16px;
   cursor: pointer;
 }
-
 
 .feed-list-modal {
   position: relative;
@@ -860,7 +792,7 @@ body {
 
 .list-modal-content {
   padding: 10px 0;
-  overflow-y: auto; /* Scrollable list */
+  overflow-y: auto; 
   flex: 1;
 }
 
@@ -948,7 +880,6 @@ body {
   cursor: pointer;
 }
 
-
 .feed-node-label {
   position: absolute;
   bottom: -32px;
@@ -966,8 +897,6 @@ body {
   text-shadow: none;
   box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
-
-
 
 .list-modal-header-combined {
   padding: 25px;
@@ -989,7 +918,6 @@ body {
   color: white;
 }
 
-
 .list-search-input, .list-filter-select {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(167, 139, 250, 0.4);
@@ -1008,8 +936,6 @@ body {
   box-shadow: 0 0 10px rgba(188, 19, 254, 0.3);
 }
 
-
-/* Just for formatting purposes put by me */
 .empty-list-text {
   padding: 40px;
   text-align: center;
@@ -1041,11 +967,105 @@ body {
 
 .red-close-btn:hover {
   transform: scale(1.15);
-  background: #dc2626; /* Slightly darker red on hover */
+  background: #dc2626; 
 }
 
 @keyframes floatNode {
   0% { margin-top: 0px; }
   50% { margin-top: -15px; }
   100% { margin-top: 0px; }
+}
+
+/* --- Network Button --- */
+.network-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+.network-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.network-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- Network Modal Tabs --- */
+.network-tabs-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.network-tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.network-tab.active {
+  background: #1DB954;
+  color: #000;
+}
+
+.network-search-container {
+  margin-top: 0;
+}
+
+.network-search-input {
+  width: 100%;
+}
+
+.network-modal-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.network-empty-text {
+  text-align: center;
+  opacity: 0.6;
+}
+
+/* --- Infinite Grid Background --- */
+.infinite-grid-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
+
+.feed-environment-infinite {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-image: none; 
+}
+
+.canvas-wrapper {
+  position: relative;
+  z-index: 1;
 }

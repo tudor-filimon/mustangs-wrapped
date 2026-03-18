@@ -35,7 +35,10 @@ export default function FeedPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEra, setFilterEra] = useState('all');
 
-  // We use a ref for the grid so we can update it at 60fps without React lag
+  const [showNetworkModal, setShowNetworkModal] = useState(false);
+  const [networkTab, setNetworkTab] = useState('following'); 
+  const [networkSearch, setNetworkSearch] = useState('');
+
   const gridRef = useRef(null);
 
   const isOwner = useMemo(() => {
@@ -125,12 +128,10 @@ export default function FeedPage() {
     return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
   };
 
-  // We keep a safe internal bounds size, but limitToBounds={false} and our optical illusion grid make it physically infinite
   const CANVAS_SIZE = 4000; 
   const startX = (window.innerWidth / 2) - (CANVAS_SIZE / 2);
   const startY = ((window.innerHeight - 80) / 2) - (CANVAS_SIZE / 2);
   
-  // EXACT RING CALCULATION FIX: Only draws the exact amount of rings needed to hold your current posts
   const neededRings = useMemo(() => {
     let required = 0;
     let counted = 0;
@@ -140,7 +141,7 @@ export default function FeedPage() {
       required = r + 1;
       r++;
     }
-    return Math.max(1, required); // Always draws at least 1 ring, but stops immediately after needed rings
+    return Math.max(1, required);
   }, [posts.length]);
 
   const ringsArray = Array.from({ length: neededRings }, (_, i) => i);
@@ -149,35 +150,79 @@ export default function FeedPage() {
     <div className="home-container dark page-transition feed-page-container">
       <AnimatedBackground />
       
-      {/* THE INFINITE GRID TRICK: Costs zero memory, scales and pans flawlessly */}
       <div 
         ref={gridRef}
+        className="infinite-grid-bg"
         style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          backgroundImage: `
-            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
-          `,
           backgroundSize: '100px 100px',
           backgroundPosition: `${startX}px ${startY}px`
         }}
       />
 
       <header className="feed-header">
-        <button className="feed-back-btn" onClick={() => navigate('/home')}>← Back</button>
-        <h1 className="feed-title">{name}'s Feed</h1>
-        {nowPlaying?.playing && (
-          <div className="feed-header-pill" onClick={() => setShowNowPlayingModal(true)}>
-            <img src={nowPlaying.image} alt="playing" className="pill-art" />
-            <div className="pill-glow-ring"></div>
-          </div>
-        )}
+        <div className="feed-header-left">
+          <button className="feed-back-btn" onClick={() => navigate('/home')}>← Back</button>
+          <h1 className="feed-title">{name}'s Feed</h1>
+        </div>
+
+        <div className="feed-header-right">
+          <button className="network-btn" onClick={() => setShowNetworkModal(true)}>
+            <img src="\src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends
+          </button>
+
+          {nowPlaying?.playing && (
+            <div className="feed-header-pill" onClick={() => setShowNowPlayingModal(true)}>
+              <img src={nowPlaying.image} alt="playing" className="pill-art" />
+              <div className="pill-glow-ring"></div>
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* Modals ... */}
+      {/* Network Modal */}
+      {showNetworkModal && (
+        <div className="modal-overlay" onClick={() => setShowNetworkModal(false)}>
+          <div className="feed-list-modal" onClick={e => e.stopPropagation()}>
+            <button className="red-close-btn modal-corner-x" onClick={() => setShowNetworkModal(false)}>✕</button>
+            <div className="list-modal-header-combined">
+              <h2>{name}'s Network</h2>
+              
+              <div className="network-tabs-container">
+                <button
+                  className={`network-tab ${networkTab === 'followers' ? 'active' : ''}`}
+                  onClick={() => setNetworkTab('followers')}
+                >
+                  Followers
+                </button>
+                <button
+                  className={`network-tab ${networkTab === 'following' ? 'active' : ''}`}
+                  onClick={() => setNetworkTab('following')}
+                >
+                  Following
+                </button>
+              </div>
+
+              <div className="list-controls network-search-container">
+                <input 
+                  type="text" 
+                  placeholder={`Search ${networkTab}...`} 
+                  className="list-search-input network-search-input" 
+                  value={networkSearch} 
+                  onChange={(e) => setNetworkSearch(e.target.value)} 
+                />
+              </div>
+            </div>
+
+            <div className="list-modal-content network-modal-content">
+              <p className="empty-list-text network-empty-text">
+                Backend logic for {networkTab} coming soon... <br/><br/>
+                (This shell is ready for data)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showNowPlayingModal && nowPlaying && (
         <div className="modal-overlay" onClick={() => setShowNowPlayingModal(false)}>
           <div className="feed-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -248,7 +293,7 @@ export default function FeedPage() {
       )}
 
       {!loading && (
-        <div className="canvas-container" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="canvas-container canvas-wrapper">
           <TransformWrapper 
             initialScale={1} 
             minScale={0.1} 
@@ -258,7 +303,6 @@ export default function FeedPage() {
             limitToBounds={false} 
             wheel={{ step: 0.1 }}
             onTransformed={(ref) => {
-              // Ties the fixed grid to your panning and zooming at 60fps
               if (gridRef.current) {
                 const { positionX, positionY, scale } = ref.state;
                 gridRef.current.style.backgroundPosition = `${positionX}px ${positionY}px`;
@@ -271,8 +315,7 @@ export default function FeedPage() {
                 <div className="canvas-controls"> <button className="control-btn" onClick={() => zoomIn()}>+</button> <button className="control-btn" onClick={() => zoomOut()}>-</button> <button className="control-btn" onClick={() => resetTransform()}><img src="src/assets/images/HomeViewFeedPage.svg" alt="Home"/></button> </div>
                 <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: `${CANVAS_SIZE}px`, height: `${CANVAS_SIZE}px` }}>
                   
-                  {/* Applied backgroundImage: 'none' to hide any old, cut-off grid from the original CSS */}
-                  <div className="feed-environment" style={{ width: '100%', height: '100%', position: 'relative', backgroundImage: 'none' }}>
+                  <div className="feed-environment feed-environment-infinite">
                     <div className="feed-center owner-clickable" onClick={() => setShowListModal(true)}> <img src={avatar} alt="User" className="feed-center-avatar" draggable={false} /> <div className="feed-center-label">{name}</div> </div>
                     
                     {posts.map((post, index) => {
