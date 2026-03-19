@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import multiavatar from '@multiavatar/multiavatar/esm';
+import multiavatar from '@multiavatar/multiavatar';
 import '../App.css';
 
 const clothingOptions = [
