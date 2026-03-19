@@ -4,6 +4,7 @@ import MapGraphic from '../components/MapGraphic';
 import '../components/styles.css';
 
 export default function CampusMaps() {
+  
   const [activeBuilding, setActiveBuilding] = useState(null);
   const navigate = useNavigate(); 
 
@@ -32,13 +33,13 @@ export default function CampusMaps() {
         Back
       </button>
 
-      {/* --- Main Interactive Map --- */}
+      {/* Main Interactive Map */}
       <div className="campus-maps-container" style={{ width: '100%', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 10 }}>
         {/* WE INJECT THE MAP HERE */}
         <MapGraphic handleBuildingClick={handleBuildingClick} liveUsers={liveUsers} />
       </div>
 
-      {/* --- The Split Screen Modal --- */}
+      {/* The Split Screen Modal*/}
       {activeBuilding && (
         <div className="campus-modal-overlay" onClick={() => setActiveBuilding(null)}>
           <div className="campus-modal-content" onClick={(e) => e.stopPropagation()}>
