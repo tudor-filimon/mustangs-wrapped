@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
+import TiltedCard from '../components/TiltedCard';
 import api from '../utils/api';
 
 const styles = {
@@ -66,33 +67,20 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center'
   },
-  cardTitle: {
-    fontSize: '32px',
+  coverTitle: {
+    fontSize: '24px',
     fontWeight: 'bold',
     color: 'white',
-    marginBottom: '24px',
     textAlign: 'center',
-    margin: '0 0 24px 0',
+    margin: 0,
     fontFamily: "'Press Start 2P', cursive",
     textShadow: `
-      3px 3px 0px rgba(0, 0, 0, 0.5),
-      -2px -2px 0px #6b46c1,
-      2px -2px 0px #6b46c1,
-      -2px 2px 0px #6b46c1,
-      2px 2px 0px #6b46c1,
-      -2px 0px 0px #6b46c1,
-      2px 0px 0px #6b46c1,
-      0px -2px 0px #6b46c1,
-      0px 2px 0px #6b46c1
+      2px 2px 0px rgba(0, 0, 0, 0.45),
+      -1px -1px 0px rgba(139, 92, 246, 0.6),
+      1px 1px 0px rgba(139, 92, 246, 0.6)
     `,
-    lineHeight: '1.4'
-  },
-  imagePlaceholder: {
-    width: '100%',
-    aspectRatio: '1',
-    backgroundColor: '#d1d5db',
-    marginBottom: '24px',
-    borderRadius: '2px'
+    lineHeight: '1.35',
+    transform: 'translateZ(32px)'
   },
   playlistButton: {
     backgroundColor: '#e9d5ff',
@@ -113,6 +101,25 @@ const styles = {
   bottomDivider: {
     height: '1px',
     backgroundColor: '#a78bfa'
+  },
+  addMoreButtonWrap: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '12px',
+    marginBottom: '36px'
+  },
+  addMoreButton: {
+    backgroundColor: '#e9d5ff',
+    border: 'none',
+    padding: '14px 28px',
+    borderRadius: '9999px',
+    fontSize: '15px',
+    fontWeight: '700',
+    color: '#581c87',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s',
+    outline: 'none',
+    boxShadow: 'none'
   }
 };
 
@@ -120,11 +127,15 @@ export default function MustangWrapped() {
   const navigate = useNavigate();
   const [topTracks, setTopTracks] = useState([]);
   const [globalTopTracks, setGlobalTopTracks] = useState([]);
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     api.getTopTracks('medium_term')
       .then((data) => {
-        console.log('Top tracks:', data.tracks);
+        console.log('Top 50 tracks:', data.tracks);
         if (data.tracks?.length) setTopTracks(data.tracks);
         data.tracks?.forEach((t, i) => {
           console.log(`${i + 1}. ${t.name} – ${t.artists}`);
@@ -136,38 +147,34 @@ export default function MustangWrapped() {
 
     api.getGlobalTopTracks()
       .then((data) => {
-        console.log('Global top tracks:', data.tracks);
+        console.log('Global top 50 tracks:', data.tracks);
         if (data.tracks?.length) setGlobalTopTracks(data.tracks);
       })
       .catch((err) => {
-        console.warn('Could not load global top tracks:', err.message);
+        console.warn('Could not load global tracks:', err.message);
       });
   }, []);
 
   const top50Songs = topTracks.slice(0, 50).map((t) => ({
     id: t.spotify_id,
+    spotifyId: t.spotify_id,
     title: t.name,
     album: t.artists,
     imageUrl: t.image
   }));
 
-  const globalTop50Songs = globalTopTracks.slice(0, 50).map((t, index) => ({
-    id: t.spotify_id || index + 1,
+  const globalTop50Songs = globalTopTracks.slice(0, 50).map((t) => ({
+    id: t.spotify_id,
+    spotifyId: t.spotify_id,
     title: t.name,
-    album: '',
-    imageUrl: t.image_url || null
+    album: t.artists || 'Unknown artist',
+    imageUrl: t.image_url
   }));
 
   const wrappedItems = [
-    { id: 1, title: 'Your Top 50 Tracks', isTop50Playlist: true },
-    { id: 2, title: 'Campus Top 50 Tracks', isGlobalTop50Playlist: true },
-    { id: 3, title: 'Wrapped Thing #3' },
-    { id: 4, title: 'Wrapped Thing #4' },
-    { id: 5, title: 'Wrapped Thing #5' },
-    { id: 6, title: 'Wrapped Thing #6' },
-    { id: 7, title: 'Wrapped Thing #7' },
-    { id: 8, title: 'Wrapped Thing #8' },
-    { id: 9, title: 'Wrapped Thing #9' }
+    { id: 1, title: 'Your Top 50 Songs', isTop50Playlist: true },
+    { id: 2, title: 'Global Top 50 Songs', isGlobalTop50Playlist: true },
+    { id: 3, title: 'Faculty Top 50 Songs' }
   ];
 
   // Group items into chunks of 3
@@ -201,25 +208,46 @@ export default function MustangWrapped() {
             <div style={styles.grid}>
               {group.map((item) => (
                 <div key={item.id} style={styles.card}>
-                  {/* Card Title */}
-                  <h2 style={styles.cardTitle}>{item.title}</h2>
-                  
-                  {/* Card Image Placeholder */}
-                  <div style={styles.imagePlaceholder}></div>
-                  
-                  {/* View Playlist Button */}
-                    <button 
-                      style={styles.playlistButton}
-                      onClick={() => navigate('/playlist', {
+                  {/* Playlist Cover */}
+                  <div
+                    style={{ width: '100%', marginBottom: '24px' }}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate('/playlist', {
                       state: item.isTop50Playlist
-                        ? { playlistName: 'Your Top 50 Tracks', songs: top50Songs }
+                        ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
                         : item.isGlobalTop50Playlist
-                          ? { playlistName: 'Campus Top 50 Tracks', songs: globalTop50Songs }
-                          : undefined
+                          ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
+                        : undefined
                     })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate('/playlist', {
+                          state: item.isTop50Playlist
+                            ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
+                            : item.isGlobalTop50Playlist
+                              ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
+                            : undefined
+                        });
+                      }
+                    }}
                   >
-                    ♪ View Playlist
-                  </button>
+                    <TiltedCard
+                      containerHeight="280px"
+                      containerWidth="100%"
+                      cardHeight="280px"
+                      cardWidth="100%"
+                      captionText={item.title}
+                      showTooltip={false}
+                      overlayContent={
+                        <>
+                          <h2 style={styles.coverTitle}>{item.title}</h2>
+                          <span className="tilted-card-cta">View Playlist</span>
+                        </>
+                      }
+                    />
+                  </div>
                 </div>
               ))}
             </div>
@@ -229,6 +257,15 @@ export default function MustangWrapped() {
             )}
           </React.Fragment>
         ))}
+
+        <div style={styles.addMoreButtonWrap}>
+          <button
+            style={styles.addMoreButton}
+            onClick={() => window.alert('More playlists coming soon.')}
+          >
+            + Add More Playlists
+          </button>
+        </div>
 
         {/* Bottom Divider */}
         <div style={styles.bottomDivider}></div>

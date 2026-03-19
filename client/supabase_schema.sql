@@ -42,8 +42,8 @@ CREATE TABLE public.wrapped_items (
   spotify_id TEXT NOT NULL,
   rank INT NOT NULL CHECK (rank >= 1 AND rank <= 50),
   name TEXT NOT NULL,
+  artists TEXT,
   image_url TEXT,
-  duration_ms INT, -- Optional: track duration for listen-time calculations
 
   -- Constraints: unique rank and unique spotify_id per snapshot and type
   UNIQUE (snapshot_id, item_type, rank),
