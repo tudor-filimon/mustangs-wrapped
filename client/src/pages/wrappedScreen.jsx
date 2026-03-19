@@ -50,12 +50,6 @@ const styles = {
     outline: 'none',
     boxShadow: 'none'
   },
-  divider: {
-    height: '1px',
-    backgroundColor: '#a78bfa',
-    marginBottom: '48px',
-    maxWidth: '300px'
-  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -98,10 +92,6 @@ const styles = {
     outline: 'none',
     boxShadow: 'none'
   },
-  bottomDivider: {
-    height: '1px',
-    backgroundColor: '#a78bfa'
-  },
   addMoreButtonWrap: {
     display: 'flex',
     justifyContent: 'center',
@@ -127,6 +117,8 @@ export default function MustangWrapped() {
   const navigate = useNavigate();
   const [topTracks, setTopTracks] = useState([]);
   const [globalTopTracks, setGlobalTopTracks] = useState([]);
+  const [facultyTopTracks, setFacultyTopTracks] = useState([]);
+  const [facultyPlaylistTitle, setFacultyPlaylistTitle] = useState('Faculty Top 50 Songs');
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -153,6 +145,19 @@ export default function MustangWrapped() {
       .catch((err) => {
         console.warn('Could not load global tracks:', err.message);
       });
+
+    api.getFacultyTopTracks()
+      .then((data) => {
+        console.log('Faculty top 50 tracks:', data.tracks);
+        if (data.tracks?.length) setFacultyTopTracks(data.tracks);
+        const cohortValue = data?.cohort?.value;
+        if (cohortValue && String(cohortValue).trim().length > 0) {
+          setFacultyPlaylistTitle(`${cohortValue} Top 50 Songs`);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load faculty tracks:', err.message);
+      });
   }, []);
 
   const top50Songs = topTracks.slice(0, 50).map((t) => ({
@@ -171,10 +176,18 @@ export default function MustangWrapped() {
     imageUrl: t.image_url
   }));
 
+  const facultyTop50Songs = facultyTopTracks.slice(0, 50).map((t) => ({
+    id: t.spotify_id,
+    spotifyId: t.spotify_id,
+    title: t.name,
+    album: t.artists || 'Unknown artist',
+    imageUrl: t.image_url
+  }));
+
   const wrappedItems = [
     { id: 1, title: 'Your Top 50 Songs', isTop50Playlist: true },
     { id: 2, title: 'Global Top 50 Songs', isGlobalTop50Playlist: true },
-    { id: 3, title: 'Faculty Top 50 Songs' }
+    { id: 3, title: facultyPlaylistTitle, isFacultyTop50Playlist: true }
   ];
 
   // Group items into chunks of 3
@@ -199,9 +212,6 @@ export default function MustangWrapped() {
           </button>
         </div>
 
-        {/* Divider */}
-        <div style={styles.divider}></div>
-
         {/* Cards Grid with Dividers */}
         {groupedItems.map((group, groupIndex) => (
           <React.Fragment key={`group-${groupIndex}`}>
@@ -218,6 +228,8 @@ export default function MustangWrapped() {
                         ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
                         : item.isGlobalTop50Playlist
                           ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
+                        : item.isFacultyTop50Playlist
+                          ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
                         : undefined
                     })}
                     onKeyDown={(e) => {
@@ -228,6 +240,8 @@ export default function MustangWrapped() {
                             ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
                             : item.isGlobalTop50Playlist
                               ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
+                            : item.isFacultyTop50Playlist
+                              ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
                             : undefined
                         });
                       }
@@ -251,10 +265,6 @@ export default function MustangWrapped() {
                 </div>
               ))}
             </div>
-            {/* Add divider after each group except the last one */}
-            {groupIndex < groupedItems.length - 1 && (
-              <div style={{...styles.bottomDivider, marginTop: '32px', marginBottom: '32px'}}></div>
-            )}
           </React.Fragment>
         ))}
 
@@ -267,8 +277,6 @@ export default function MustangWrapped() {
           </button>
         </div>
 
-        {/* Bottom Divider */}
-        <div style={styles.bottomDivider}></div>
       </div>
     </div>
     </div>

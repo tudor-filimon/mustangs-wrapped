@@ -97,6 +97,14 @@ class ApiClient {
     return this.request('/api/spotify/global-top-tracks');
   }
 
+  async getFacultyTopTracks() {
+    return this.request('/api/spotify/faculty-top-tracks');
+  }
+
+  async getFacultyTopTracks() {
+    return this.request('/api/spotify/faculty-top-tracks');
+  }
+
   // NEW: Get a specific user's cached Spotify stats
   async getUserSpotifyStats(userId) {
     return this.request(`/api/spotify/profile-stats/${encodeURIComponent(userId)}`);
