@@ -113,12 +113,33 @@ class ApiClient {
     return this.request('/api/spotify/global-top-tracks');
   }
 
-  // Friends endpoints
+  // Following / Followers (uses Supabase followers table)
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');
-    return this.request(`/api/friends/users/search?q=${q}`);
+    return this.request(`/api/follows/users/search?q=${q}`);
   }
 
+  async followUser(userId) {
+    return this.request(`/api/follows/${encodeURIComponent(userId)}`, { method: 'POST' });
+  }
+
+  async unfollowUser(userId) {
+    return this.request(`/api/follows/${encodeURIComponent(userId)}`, { method: 'DELETE' });
+  }
+
+  async getFollowing() {
+    return this.request('/api/follows/following/list');
+  }
+
+  async getFollowers() {
+    return this.request('/api/follows/followers/list');
+  }
+
+  async getFollowStatus(userId) {
+    return this.request(`/api/follows/status/${encodeURIComponent(userId)}`);
+  }
+
+  // Legacy friends endpoints
   async sendFriendRequest(receiverId) {
     return this.request('/api/friends/requests', {
       method: 'POST',
@@ -155,7 +176,7 @@ class ApiClient {
   }
 
   async getUserProfile(userId) {
-    return this.request(`/api/friends/profile/${encodeURIComponent(userId)}`);
+    return this.request(`/api/follows/profile/${encodeURIComponent(userId)}`);
   }
 }
 

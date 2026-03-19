@@ -155,6 +155,35 @@ router.get('/followers/list', async (req, res, next) => {
 });
 
 /**
+ * GET /api/follows/profile/:userId
+ * Get user profile from users table (for viewing other users' profiles)
+ */
+router.get('/profile/:userId', async (req, res, next) => {
+  try {
+    const me = req.user.id;
+    const otherId = req.params.userId;
+
+    const { data: profile, error } = await supabaseAdmin
+      .from('users')
+      .select('id, display_name, avatar_url, faculty, class_year, major')
+      .eq('id', otherId)
+      .single();
+
+    if (error || !profile) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (otherId === me) {
+      return res.json({ user: profile, isSelf: true, areFriends: false, requestStatus: 'none' });
+    }
+
+    res.json({ user: profile, isSelf: false, areFriends: false, requestStatus: 'none' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
  * GET /api/follows/status/:userId
  * For current user vs target: isFollowing, isFollower
  */

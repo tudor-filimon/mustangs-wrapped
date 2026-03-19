@@ -8,9 +8,8 @@ const defaultAvatar = '/src/assets/images/default-avatar.png';
 
 export default function FriendsPage() {
   const navigate = useNavigate();
-  const [friends, setFriends] = useState([]);
-  const [requests, setRequests] = useState({ incoming: [], sent: [] });
-  const [activity, setActivity] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,19 +20,14 @@ export default function FriendsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [friendsRes, requestsRes, activityRes] = await Promise.all([
-        api.getFriends(),
-        api.getFriendRequests(),
-        api.getFriendsActivity()
+      const [followingRes, followersRes] = await Promise.all([
+        api.getFollowing(),
+        api.getFollowers()
       ]);
-      setFriends(friendsRes.friends || []);
-      setRequests({
-        incoming: requestsRes.incoming || [],
-        sent: requestsRes.sent || []
-      });
-      setActivity(activityRes.activity || []);
+      setFollowing(followingRes.following || []);
+      setFollowers(followersRes.followers || []);
     } catch (e) {
-      console.error('Friends load error', e);
+      console.error('Followers load error', e);
     } finally {
       setLoading(false);
     }
@@ -61,43 +55,16 @@ export default function FriendsPage() {
     }
   };
 
-  const handleSendRequest = async (receiverId) => {
+  const handleFollow = async (userId) => {
     if (actionLoading) return;
-    setActionLoading(receiverId);
+    setActionLoading(userId);
     try {
-      await api.sendFriendRequest(receiverId);
-      setSearchResults(prev => prev.filter(u => u.id !== receiverId));
+      await api.followUser(userId);
+      setSearchResults(prev => prev.filter(u => u.id !== userId));
       await loadData();
     } catch (e) {
-      console.error('Send request error', e);
-      alert(e.message || 'Could not send request');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleAccept = async (requestId) => {
-    if (actionLoading) return;
-    setActionLoading(requestId);
-    try {
-      await api.acceptFriendRequest(requestId);
-      await loadData();
-    } catch (e) {
-      console.error('Accept error', e);
-      alert(e.message || 'Could not accept');
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDecline = async (requestId) => {
-    if (actionLoading) return;
-    setActionLoading(requestId);
-    try {
-      await api.declineFriendRequest(requestId);
-      await loadData();
-    } catch (e) {
-      console.error('Decline error', e);
+      console.error('Follow error', e);
+      alert(e.message || 'Could not follow user');
     } finally {
       setActionLoading(null);
     }
@@ -124,17 +91,6 @@ export default function FriendsPage() {
         .friends-card:hover {
           transform: translateY(-2px);
           box-shadow: 0 8px 25px rgba(147, 51, 234, 0.3);
-        }
-        .friends-activity-card {
-          background: rgba(151, 53, 216, 0.15);
-          backdrop-filter: blur(15px);
-          border: 1px solid rgba(167, 139, 250, 0.4);
-          border-radius: 20px;
-          padding: 16px 20px;
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
         }
         .friends-avatar {
           width: 48px;
@@ -174,19 +130,17 @@ export default function FriendsPage() {
       </header>
 
       <main style={styles.mainContent}>
-        <h1 style={styles.pageTitle}>Friends</h1>
+        <h1 style={styles.pageTitle}>Followers &amp; Following</h1>
 
         <div style={styles.columns}>
-          {/* LEFT COLUMN: add/search + requests */}
           <div style={styles.column}>
-            {/* Add Friends */}
             <div className="friends-section">
               <button
                 className="pill-btn"
                 style={{ marginBottom: 12 }}
                 onClick={() => { setSearchOpen(!searchOpen); setSearchResults([]); setSearchQuery(''); }}
               >
-                {searchOpen ? 'Close search' : '+ Add friends'}
+                {searchOpen ? 'Close search' : '+ Find people to follow'}
               </button>
               {searchOpen && (
                 <div style={styles.searchBox}>
@@ -211,10 +165,10 @@ export default function FriendsPage() {
                           <button
                             className="friends-btn-small"
                             style={{ background: '#a78bfa', color: '#1f1041' }}
-                            onClick={() => handleSendRequest(u.id)}
+                            onClick={() => handleFollow(u.id)}
                             disabled={actionLoading === u.id}
                           >
-                            {actionLoading === u.id ? 'Sending...' : 'Add friend'}
+                            {actionLoading === u.id ? 'Following...' : 'Follow'}
                           </button>
                         </div>
                       ))}
@@ -226,70 +180,17 @@ export default function FriendsPage() {
                 </div>
               )}
             </div>
-
-            {/* Friend Requests */}
-            <div className="friends-section">
-              <h3 style={styles.sectionHeader}>Friend requests</h3>
-              {requests.incoming.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <p style={styles.subLabel}>Incoming</p>
-                  {requests.incoming.map((r) => (
-                    <div key={r.id} className="friends-card">
-                      <img src={r.user?.avatar_url || defaultAvatar} alt="" className="friends-avatar" />
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ color: 'white' }}>{r.user?.display_name || 'Unknown'}</strong>
-                      </div>
-                      <button
-                        className="friends-btn-small"
-                        style={{ background: '#22c55e', color: 'white', marginRight: 8 }}
-                        onClick={() => handleAccept(r.id)}
-                        disabled={actionLoading === r.id}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        className="friends-btn-small"
-                        style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}
-                        onClick={() => handleDecline(r.id)}
-                        disabled={actionLoading === r.id}
-                      >
-                        Decline
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {requests.sent.length > 0 && (
-                <div>
-                  <p style={styles.subLabel}>Sent (pending)</p>
-                  {requests.sent.map((r) => (
-                    <div key={r.id} className="friends-card">
-                      <img src={r.user?.avatar_url || defaultAvatar} alt="" className="friends-avatar" />
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ color: 'white' }}>{r.user?.display_name || 'Unknown'}</strong>
-                      </div>
-                      <span style={{ color: '#d8b4fe', fontSize: 14 }}>Pending</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {requests.incoming.length === 0 && requests.sent.length === 0 && (
-                <p style={{ color: '#d8b4fe' }}>No pending requests.</p>
-              )}
-            </div>
           </div>
 
-          {/* RIGHT COLUMN: friends + activity */}
           <div style={styles.column}>
-            {/* Friends list */}
             <div className="friends-section">
-              <h3 style={styles.sectionHeader}>Your friends</h3>
+              <h3 style={styles.sectionHeader}>Following</h3>
               {loading ? (
                 <p style={{ color: '#d8b4fe' }}>Loading...</p>
-              ) : friends.length === 0 ? (
-                <p style={{ color: '#d8b4fe' }}>No friends yet. Search and add friends above.</p>
+              ) : following.length === 0 ? (
+                <p style={{ color: '#d8b4fe' }}>You&apos;re not following anyone yet. Search and follow people above.</p>
               ) : (
-                friends.map((f) => (
+                following.map((f) => (
                   <div
                     key={f.id}
                     className="friends-card"
@@ -306,40 +207,25 @@ export default function FriendsPage() {
               )}
             </div>
 
-            {/* Friends Activity */}
             <div className="friends-section">
-              <h3 style={styles.sectionHeader}>Friends activity</h3>
+              <h3 style={styles.sectionHeader}>Followers</h3>
               {loading ? (
                 <p style={{ color: '#d8b4fe' }}>Loading...</p>
-              ) : activity.length === 0 ? (
-                <p style={{ color: '#d8b4fe' }}>No activity yet.</p>
+              ) : followers.length === 0 ? (
+                <p style={{ color: '#d8b4fe' }}>No one is following you yet.</p>
               ) : (
-                activity.map((item) => (
-                  <div key={item.user.id} className="friends-activity-card">
-                    <img src={item.user.avatar_url || defaultAvatar} alt="" className="friends-avatar" />
+                followers.map((f) => (
+                  <div
+                    key={f.id}
+                    className="friends-card"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/profile/${f.id}`)}
+                  >
+                    <img src={f.avatar_url || defaultAvatar} alt="" className="friends-avatar" />
                     <div style={{ flex: 1 }}>
-                      <strong style={{ color: 'white' }}>{item.user.display_name || 'Unknown'}</strong>
-                      {item.playing ? (
-                        <p style={{ color: '#d8b4fe', margin: '4px 0 0 0', fontSize: 14 }}>
-                          is listening to: "{item.song}" – {item.artists}
-                        </p>
-                      ) : item.recentTrack ? (
-                        <p style={{ color: '#d8b4fe', margin: '4px 0 0 0', fontSize: 14 }}>
-                          recently played: "{item.recentTrack.song}" – {item.recentTrack.artists}
-                        </p>
-                      ) : (
-                        <p style={{ color: 'rgba(255,255,255,0.5)', margin: '4px 0 0 0', fontSize: 14 }}>
-                          No recent activity
-                        </p>
-                      )}
+                      <strong style={{ color: 'white' }}>{f.display_name || 'Unknown'}</strong>
                     </div>
-                    {(item.playing && item.image) || (item.recentTrack?.image) ? (
-                      <img
-                        src={item.playing ? item.image : item.recentTrack?.image}
-                        alt=""
-                        style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }}
-                      />
-                    ) : null}
+                    <span style={{ color: '#a78bfa', fontSize: 14 }}>View profile →</span>
                   </div>
                 ))
               )}
