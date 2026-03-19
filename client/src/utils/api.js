@@ -157,6 +157,26 @@ class ApiClient {
   async getUserProfile(userId) {
     return this.request(`/api/friends/profile/${encodeURIComponent(userId)}`);
   }
+
+  // ==========================
+  // Feed endpoints
+  // ==========================
+  async getFeedPosts() {
+    return this.request('/api/feed');
+  }
+
+  async postToFeed(postData) {
+    return this.request('/api/feed', {
+      method: 'POST',
+      body: JSON.stringify(postData)
+    });
+  }
+
+  async deleteFeedPost(postId) {
+    return this.request(`/api/feed/${postId}`, {
+      method: 'DELETE'
+    });
+  }
 }
 
 export default new ApiClient();
