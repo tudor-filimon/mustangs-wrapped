@@ -14,6 +14,7 @@ import ComingSoon from './pages/ComingSoon.jsx'
 import RegisterComplete from './pages/RegisterComplete.jsx'
 import FeedPage from './pages/FeedPage.jsx'
 import CampusMaps from './pages/CampusMaps'
+import AvatarPage from './pages/Avatar.jsx'
 
 function App() {
   return (
@@ -53,11 +54,14 @@ function App() {
               <FeedPage />
             </ProtectedRoute>
           } />
-          <Route path="/profile/:userId" element={
+
+          <Route path="/avatar" element={
             <ProtectedRoute>
-              <ProfilePage />
+              <AvatarPage />
             </ProtectedRoute>
           } />
+
+
           <Route path="/friends" element={
             <ProtectedRoute>
               <FriendsPage />

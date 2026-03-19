@@ -7,20 +7,59 @@ import moonIcon from '../assets/images/moonIcon.svg';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
+// Avatar Configuration Options for the Header Icon
+const clothingColorOptions = [
+  { id: 'purple', value: '#8b5cf6' },
+  { id: 'black', value: '#111827' },
+  { id: 'white', value: '#f9fafb' },
+  { id: 'red', value: '#ef4444' },
+];
+const hairColorOptions = [
+  { id: 'black', value: '#111827' },
+  { id: 'brown', value: '#92400e' },
+  { id: 'blonde', value: '#eab308' },
+  { id: 'red', value: '#b91c1c' },
+  { id: 'purple', value: '#7c3aed' },
+];
+const skinToneOptions = [
+  { id: 'light', value: '#f9e0d2' },
+  { id: 'asian', value: '#e8c4a8' },
+  { id: 'tan', value: '#e0b898' },
+  { id: 'medium', value: '#c27a4f' },
+  { id: 'dark', value: '#8b5a3c' },
+  { id: 'ultra-dark', value: '#4a3228' },
+];
+
 function HomePage() {
   const [theme, setTheme] = useState('dark'); 
   const [showWfnModal, setShowWfnModal] = useState(false);
   const [showAlbumModal, setShowAlbumModal] = useState(false);
   
-  // NEW: State to track button text/feedback
+  // State to track button text/feedback
   const [feedStatus, setFeedStatus] = useState('');
+  
+  // Avatar State
+  const [savedAvatar, setSavedAvatar] = useState(null);
   
   const navigate = useNavigate();
   const { user } = useAuth();
   const name = user?.display_name || user?.displayName || user?.email || 'Guest';
-  const avatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
+  const fallbackAvatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
   
   const [nowPlaying, setNowPlaying] = useState(null);
+
+  // Load Avatar from Local Storage
+  useEffect(() => {
+    const stored = window.localStorage.getItem('mustangsWrappedAvatar');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setSavedAvatar(parsed);
+      } catch {
+        setSavedAvatar(null);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -37,7 +76,7 @@ function HomePage() {
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
-  // NEW: Function to handle sending the song to the feed
+  // Function to handle sending the song to the feed
   const handleSendToFeed = async () => {
     if (!nowPlaying || !nowPlaying.track_id) {
       setFeedStatus('Error');
@@ -56,7 +95,7 @@ function HomePage() {
         album_name: nowPlaying.album,
         release_date: nowPlaying.release_date
       });
-      setFeedStatus('Successfully sent to feed'); // <-- FIXED: Changed to "feed"
+      setFeedStatus('Successfully sent to feed'); 
       
       // Clear the message and close modal after 2 seconds
       setTimeout(() => {
@@ -84,7 +123,7 @@ function HomePage() {
         </div>
       )}
 
-      {/* Album Click Modal - UPDATED WITH SEND BUTTON */}
+      {/* Album Click Modal */}
       {showAlbumModal && nowPlaying && (
         <div className="modal-overlay" onClick={() => setShowAlbumModal(false)}>
           <div className="modal-content" style={{ textAlign: 'center', padding: '30px' }} onClick={(e) => e.stopPropagation()}>
@@ -138,12 +177,46 @@ function HomePage() {
           </div>
       
           <div className="header-center">
-              <div className="profile-pic-container">
-                <img
-                  src={avatar}
-                  alt="avatar"
-                  className="profile-pic"
-                />
+              <div className="profile-pic-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: savedAvatar?.mode === 'custom' ? 'radial-gradient(circle at 30% 20%, #ffffff 0%, #d2d2d2 35%, #9a9a9a 100%)' : 'transparent' }}>
+                {savedAvatar ? (
+                  savedAvatar.mode === 'multiavatar' && savedAvatar.svg ? (
+                    <div
+                      style={{ width: '100%', height: '100%' }}
+                      dangerouslySetInnerHTML={{ __html: savedAvatar.svg }}
+                    />
+                  ) : savedAvatar.mode === 'custom' ? (
+                    <div style={{ transform: 'scale(0.18)', position: 'relative', top: '-5px' }}>
+                      {(() => {
+                        const selectedClothingColor = clothingColorOptions.find((c) => c.id === savedAvatar.clothingColor)?.value;
+                        const selectedHairColor = hairColorOptions.find((c) => c.id === savedAvatar.hairColor)?.value;
+                        const selectedSkinTone = skinToneOptions.find((c) => c.id === savedAvatar.skinTone)?.value;
+
+                        return (
+                          <>
+                            <div className={`avatar-head avatar-hair-${savedAvatar.hairStyle}`} style={{ '--hair-color': selectedHairColor, '--skin-color': selectedSkinTone }}>
+                              <div className="avatar-head-skin" style={{ backgroundColor: selectedSkinTone }} />
+                              <div className={`avatar-face avatar-expression-${savedAvatar.expression}`}>
+                                <div className="avatar-eyes">
+                                  <span className="avatar-eye left-eye" />
+                                  <span className="avatar-eye right-eye" />
+                                </div>
+                                <div className="avatar-mouth" />
+                              </div>
+                            </div>
+                            <div className={`avatar-body avatar-body-size-${savedAvatar.bodyType} avatar-clothing-${savedAvatar.clothing}`} style={{ '--clothing-color': selectedClothingColor, '--skin-color': selectedSkinTone }}>
+                              <div className="avatar-arm avatar-arm-left" />
+                              <div className="avatar-arm avatar-arm-right" />
+                              <div className="avatar-leg avatar-leg-left" />
+                              <div className="avatar-leg avatar-leg-right" />
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : <img src={fallbackAvatar} alt="avatar" className="profile-pic" />
+                ) : (
+                  <img src={fallbackAvatar} alt="avatar" className="profile-pic" />
+                )}
               </div>
               <h2>Hi, {name}</h2>
             </div>
@@ -160,7 +233,7 @@ function HomePage() {
       <main className="main-layout">
         <div className="row top-row">
           <button className="pill-btn" onClick={() => navigate('/campus-maps')}><img src="src\assets\images\mapsIcon.svg" alt="Map Icon"/> Campus Maps</button>
-          <button className="pill-btn" onClick={() => navigate('/coming-soon')}><img src="src\assets\images\AvatarIcon.svg" alt="Avatar Icon"/>Avatar</button>
+          <button className="pill-btn" onClick={() => navigate('/avatar')}><img src="src\assets\images\AvatarIcon.svg" alt="Avatar Icon"/>Avatar</button>
         </div>
 
         <div className="row middle-row">

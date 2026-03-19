@@ -7,32 +7,58 @@ import api from '../utils/api';
 
 const defaultAvatar = '/src/assets/images/default-avatar.png';
 
+// Lucas's Avatar Configuration Options
+const clothingColorOptions = [
+  { id: 'purple', value: '#8b5cf6' },
+  { id: 'black', value: '#111827' },
+  { id: 'white', value: '#f9fafb' },
+  { id: 'red', value: '#ef4444' },
+];
+const hairColorOptions = [
+  { id: 'black', value: '#111827' },
+  { id: 'brown', value: '#92400e' },
+  { id: 'blonde', value: '#eab308' },
+  { id: 'red', value: '#b91c1c' },
+  { id: 'purple', value: '#7c3aed' },
+];
+const skinToneOptions = [
+  { id: 'light', value: '#f9e0d2' },
+  { id: 'asian', value: '#e8c4a8' },
+  { id: 'tan', value: '#e0b898' },
+  { id: 'medium', value: '#c27a4f' },
+  { id: 'dark', value: '#8b5a3c' },
+  { id: 'ultra-dark', value: '#4a3228' },
+];
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { userId } = useParams();
   
-  // Pull 'updateUserInContext' from useAuth
   const { user, updateUserInContext } = useAuth();
   
+  // User & Friend State
   const [profileUser, setProfileUser] = useState(null);
   const [relationship, setRelationship] = useState(null);
   const [loading, setLoading] = useState(!!userId);
   const [actionLoading, setActionLoading] = useState(false);
   
-  // State to track which stat modal is currently open
+  // UI State
   const [activeModal, setActiveModal] = useState(null);
-
-  // State for Orbital Editing 
   const [editField, setEditField] = useState('');
   const [editValue, setEditValue] = useState('');
   const [updateLoading, setUpdateLoading] = useState(false);
+  
+  // Lucas's Avatar State
+  const [savedAvatar, setSavedAvatar] = useState(null);
 
   const isViewingOther = userId && user?.id && userId !== user.id;
 
+  // Spotify State
   const [spotifyStats, setSpotifyStats] = useState(null);
   const [spotifyLoading, setSpotifyLoading] = useState(false);
   const [spotifyError, setSpotifyError] = useState(null);
 
+  // Fetch Spotify Data
   useEffect(() => {
     if (isViewingOther) return;
 
@@ -50,6 +76,7 @@ export default function ProfilePage() {
     return () => { cancelled = true; };
   }, [isViewingOther]);
 
+  // Fetch User Profile
   useEffect(() => {
     if (!isViewingOther) {
       setProfileUser(null);
@@ -79,6 +106,23 @@ export default function ProfilePage() {
       });
     return () => { cancelled = true; };
   }, [userId, isViewingOther]);
+
+  // Load Avatar from Local Storage
+  useEffect(() => {
+    const stored = window.localStorage.getItem('mustangsWrappedAvatar');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setSavedAvatar(parsed);
+      } catch {
+        setSavedAvatar(null);
+      }
+    }
+  }, []);
+
+  const handleAvatar = () => {
+    navigate('/avatar');
+  };
 
   const handleAddFriend = async () => {
     if (actionLoading || !profileUser) return;
@@ -117,7 +161,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Opens the edit modal and populates the text box
   const handleOpenEdit = (field, currentValue) => {
     if (isViewingOther) return; 
     setEditField(field);
@@ -125,7 +168,6 @@ export default function ProfilePage() {
     setActiveModal('edit_node');
   };
 
-  // Submits the new value to the backend and updates context
   const handleUpdateProfile = async () => {
     if (updateLoading || isViewingOther) return;
     setUpdateLoading(true);
@@ -134,8 +176,6 @@ export default function ProfilePage() {
       payload[editField] = editValue; 
 
       const response = await api.updateProfile(payload);
-      
-      // Update the context state instantly 
       updateUserInContext(response.user);
       setActiveModal(null);
     } catch (e) {
@@ -147,9 +187,8 @@ export default function ProfilePage() {
 
   const displayUser = isViewingOther ? profileUser : user;
   const name = displayUser?.display_name || displayUser?.displayName || displayUser?.email || 'Guest';
-  const avatar = displayUser?.avatar_url || defaultAvatar;
+  const fallbackAvatar = displayUser?.avatar_url || defaultAvatar;
 
-  // Map database columns to display friendly names
   const userStats = {
     faculty: displayUser?.faculty || 'Unknown Faculty',
     year: displayUser?.classYear || displayUser?.class_year || 'Unknown Year', 
@@ -158,33 +197,21 @@ export default function ProfilePage() {
 
   const listeningStats = (() => {
     if (!spotifyStats) {
-      return {
-        obsessionLevel: '—',
-        attentionSpan: '—',
-        currentAnthem: '—',
-        artistOfMonth: '—',
-        rawObsessionInt: 0
-      };
+      return { obsessionLevel: '—', attentionSpan: '—', currentAnthem: '—', artistOfMonth: '—', rawObsessionInt: 0 };
     }
 
     const topArtistName = spotifyStats.topArtists?.[0]?.name || '';
     const topTracksArr = spotifyStats.topTracks || [];
     
-    // Obsession Level
     let matchCount = 0;
     if (topArtistName && topTracksArr.length > 0) {
       topTracksArr.forEach(track => {
-        if (track.artists && track.artists.includes(topArtistName)) {
-          matchCount++;
-        }
+        if (track.artists && track.artists.includes(topArtistName)) matchCount++;
       });
     }
     const rawObsessionInt = topTracksArr.length > 0 ? Math.round((matchCount / topTracksArr.length) * 100) : 0;
-    const obsessionLevel = topTracksArr.length > 0 && topArtistName 
-      ? `${rawObsessionInt}%` 
-      : '—';
+    const obsessionLevel = topTracksArr.length > 0 && topArtistName ? `${rawObsessionInt}%` : '—';
 
-    // Attention Span
     const tracksWithDuration = topTracksArr.filter(t => t.duration_ms);
     let attentionSpan = '—';
     if (tracksWithDuration.length > 0) {
@@ -197,13 +224,7 @@ export default function ProfilePage() {
 
     const currentAnthem = spotifyStats.topTracks?.[0]?.name || '—';
 
-    return {
-      obsessionLevel,
-      attentionSpan,
-      currentAnthem,
-      artistOfMonth: topArtistName || '—',
-      rawObsessionInt
-    };
+    return { obsessionLevel, attentionSpan, currentAnthem, artistOfMonth: topArtistName || '—', rawObsessionInt };
   })();
 
   const topTracks = spotifyStats?.topTracks?.slice(0, 3).map(t => ({
@@ -215,15 +236,10 @@ export default function ProfilePage() {
     { title: "Santa Claus is Comin' to Town", artist: "Santa Claus (Ft. Elves & Ms. Claus)" }
   ];
 
-  // Helper function to render modal content dynamically
   const renderModalContent = () => {
     switch(activeModal) {
       case 'edit_node':
-        const fieldLabels = {
-          faculty: "Faculty",
-          classYear: "Class Year",
-          major: "Major"
-        };
+        const fieldLabels = { faculty: "Faculty", classYear: "Class Year", major: "Major" };
         return (
           <>
             <h3 style={styles.modalHeader}>Edit Profile Info</h3>
@@ -235,11 +251,7 @@ export default function ProfilePage() {
               style={styles.modalInput}
               placeholder={`Enter new ${fieldLabels[editField]}`}
             />
-            <button 
-              onClick={handleUpdateProfile} 
-              style={styles.submitBtn} 
-              disabled={updateLoading}
-            >
+            <button onClick={handleUpdateProfile} style={styles.submitBtn} disabled={updateLoading}>
               {updateLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </>
@@ -250,9 +262,7 @@ export default function ProfilePage() {
             <h3 style={styles.modalHeader}>Obsession Level</h3>
             <p style={styles.modalText}>
               Your music taste is <strong>{listeningStats.obsessionLevel}</strong> obsessed with <strong>{listeningStats.artistOfMonth}</strong>. 
-              {listeningStats.rawObsessionInt > 15 
-                ? " You've practically got them on loop. We respect the dedication." 
-                : " You like to keep your rotation beautifully diverse!"}
+              {listeningStats.rawObsessionInt > 15 ? " You've practically got them on loop. We respect the dedication." : " You like to keep your rotation beautifully diverse!"}
             </p>
           </>
         );
@@ -262,7 +272,6 @@ export default function ProfilePage() {
             <h3 style={styles.modalHeader}>Attention Span</h3>
             <p style={styles.modalText}>
               On average, your favorite songs are exactly <strong>{listeningStats.attentionSpan}</strong> long. 
-              Whether you prefer quick, punchy pop anthems or long, immersive masterpieces, this is your sonic sweet spot!
             </p>
           </>
         );
@@ -271,8 +280,7 @@ export default function ProfilePage() {
           <>
             <h3 style={styles.modalHeader}>Current Anthem</h3>
             <p style={styles.modalText}>
-              Right now, you simply cannot get enough of <strong>{listeningStats.currentAnthem}</strong>. 
-              It is currently the #1 most played track in your heavy rotation. Turn it up!
+              Right now, you simply cannot get enough of <strong>{listeningStats.currentAnthem}</strong>.
             </p>
           </>
         );
@@ -281,7 +289,7 @@ export default function ProfilePage() {
           <>
             <h3 style={styles.modalHeader}>Top Artist</h3>
             <p style={styles.modalText}>
-              Out of all the artists in the entire world, <strong>{listeningStats.artistOfMonth}</strong> holds the #1 spot in your heart (and in your headphones).
+              Out of all the artists in the entire world, <strong>{listeningStats.artistOfMonth}</strong> holds the #1 spot in your heart.
             </p>
           </>
         );
@@ -336,7 +344,6 @@ export default function ProfilePage() {
           transition: all 0.2s ease;
         }
 
-        /* Editable Orbital Node Styling (Only applies if viewing your profile) */
         .editable-node:hover {
           background: rgba(167, 139, 250, 0.3);
           cursor: pointer;
@@ -480,13 +487,62 @@ export default function ProfilePage() {
         <div className="orbit-system">
           <div style={styles.centerProfile}>
             <div style={styles.avatarContainer}>
-              <img src={avatar} alt="Profile" style={styles.avatar} />
+              {savedAvatar ? (
+                savedAvatar.mode === 'multiavatar' && savedAvatar.svg ? (
+                  <div
+                    style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }}
+                    dangerouslySetInnerHTML={{ __html: savedAvatar.svg }}
+                  />
+                ) : savedAvatar.mode === 'custom' ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%', overflow: 'hidden', borderRadius: '50%' }}>
+                    <div style={{ transform: 'scale(0.55)', position: 'relative', top: '-15px' }}>
+                      {(() => {
+                        const selectedClothingColor = clothingColorOptions.find((c) => c.id === savedAvatar.clothingColor)?.value;
+                        const selectedHairColor = hairColorOptions.find((c) => c.id === savedAvatar.hairColor)?.value;
+                        const selectedSkinTone = skinToneOptions.find((c) => c.id === savedAvatar.skinTone)?.value;
+
+                        return (
+                          <>
+                            <div className={`avatar-head avatar-hair-${savedAvatar.hairStyle}`} style={{ '--hair-color': selectedHairColor, '--skin-color': selectedSkinTone }}>
+                              <div className="avatar-head-skin" style={{ backgroundColor: selectedSkinTone }} />
+                              <div className={`avatar-face avatar-expression-${savedAvatar.expression}`}>
+                                <div className="avatar-eyes">
+                                  <span className="avatar-eye left-eye" />
+                                  <span className="avatar-eye right-eye" />
+                                </div>
+                                <div className="avatar-mouth" />
+                              </div>
+                            </div>
+                            <div className={`avatar-body avatar-body-size-${savedAvatar.bodyType} avatar-clothing-${savedAvatar.clothing}`} style={{ '--clothing-color': selectedClothingColor, '--skin-color': selectedSkinTone }}>
+                              <div className="avatar-arm avatar-arm-left" />
+                              <div className="avatar-arm avatar-arm-right" />
+                              <div className="avatar-leg avatar-leg-left" />
+                              <div className="avatar-leg avatar-leg-right" />
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                ) : <img src={fallbackAvatar} alt="Profile" style={styles.avatar} />
+              ) : (
+                <img src={fallbackAvatar} alt="Profile" style={styles.avatar} />
+              )}
             </div>
             <h2 style={styles.username}>@{name.split(' ')[0]}</h2>
+            
+            {/* Customize Avatar Button injected natively into the layout */}
+            {!isViewingOther && (
+              <button 
+                onClick={handleAvatar}
+                style={{ ...styles.actionBtn, background: 'rgba(167, 139, 250, 0.3)', marginTop: '12px', fontSize: '11px', padding: '6px 14px' }}
+              >
+                Customize Avatar
+              </button>
+            )}
           </div>
 
           <div className="orbit-path">
-            {/* Conditional formatting and click events based on isViewingOther permission */}
             <div 
               className={`stat-node node-top ${!isViewingOther ? 'editable-node' : ''}`}
               onClick={() => handleOpenEdit('faculty', userStats.faculty)}
@@ -633,6 +689,9 @@ const styles = {
     background: 'linear-gradient(135deg, #bc13fe, #5b3085)',
     boxShadow: '0 0 30px rgba(188, 19, 254, 0.6)',
     marginBottom: '15px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   avatar: {
     width: '100%',
@@ -719,6 +778,7 @@ const styles = {
     fontSize: '14px',
     fontWeight: '600',
     cursor: 'pointer',
+    transition: 'transform 0.1s ease',
   },
   modalHeader: {
     fontFamily: "'Jersey 25', sans-serif",
