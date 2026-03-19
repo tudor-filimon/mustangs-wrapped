@@ -18,11 +18,18 @@ export default function PlaylistView() {
   const [playlistName, setPlaylistName] = useState('Playlist Name');
   const [songs, setSongs] = useState(placeholderSongs);
 
+  const openSpotifyTrack = (spotifyId) => {
+    if (!spotifyId) return;
+    const url = `https://open.spotify.com/track/${encodeURIComponent(spotifyId)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   useEffect(() => {
     if (location.state?.playlistName && location.state?.songs?.length) {
       setPlaylistName(location.state.playlistName);
       setSongs(location.state.songs.map((s, i) => ({
         id: s.id || i + 1,
+        spotifyId: s.spotifyId || (typeof s.id === 'string' ? s.id : null),
         title: s.title,
         album: s.album || '',
         length: s.length || '–',
@@ -33,11 +40,12 @@ export default function PlaylistView() {
     api.getWrappedTopTracks()
       .then((data) => {
         if (data.tracks?.length) {
-          setPlaylistName('Your Top 50 Tracks');
+          setPlaylistName('Your Top 50 Songs');
           setSongs(data.tracks.map((t, i) => ({
             id: t.rank || i + 1,
+            spotifyId: t.spotify_id || null,
             title: t.name,
-            album: '',
+            album: t.artists || 'Unknown artist',
             length: '–',
             imageUrl: t.image_url ?? null
           })));
@@ -58,10 +66,6 @@ export default function PlaylistView() {
         <div style={styles.content}>
           {/* Header */}
           <div style={styles.header}>
-            <div style={styles.leftButtons}>
-              <button style={styles.smallButton}>Sort</button>
-              <button style={styles.smallButton}>Export</button>
-            </div>
             <div style={styles.titleSection}>
               <h1 style={styles.playlistTitle}>{playlistName}</h1>
               <p style={styles.playlistLength}>{songs.length} song{songs.length !== 1 ? 's' : ''}</p>
@@ -79,8 +83,8 @@ export default function PlaylistView() {
           <div style={styles.songList}>
             {songs.map((song, index) => (
               <div key={song.id} style={styles.songRow}>
-                {/* Track Number */}
-                <div style={styles.songIndex}>{index + 1}</div>
+                {/* Rank */}
+                <div style={styles.songRank}>{index + 1}</div>
 
                 {/* Album Art */}
                 <div style={styles.albumArt}>
@@ -99,7 +103,14 @@ export default function PlaylistView() {
                 </div>
                 
                 {/* Play Button */}
-                <button style={styles.playButton}>► Play</button>
+                <button
+                  style={styles.playButton}
+                  onClick={() => openSpotifyTrack(song.spotifyId)}
+                  disabled={!song.spotifyId}
+                  title={song.spotifyId ? 'Open in Spotify' : 'Spotify track unavailable'}
+                >
+                  ► Play
+                </button>
               </div>
             ))}
           </div>
@@ -127,22 +138,6 @@ const styles = {
     alignItems: 'flex-start',
     marginBottom: '40px',
     gap: '20px'
-  },
-  leftButtons: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  smallButton: {
-    backgroundColor: '#e9d5ff',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '9999px',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#581c87',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s'
   },
   titleSection: {
     flex: 1,
@@ -197,17 +192,18 @@ const styles = {
   },
   songRow: {
     display: 'grid',
-    gridTemplateColumns: '40px 80px 120px 1fr 140px',
+    gridTemplateColumns: '32px 80px 120px 1fr 140px',
     alignItems: 'center',
     gap: '20px',
     padding: '20px 0',
     borderBottom: '1px solid rgba(255, 255, 255, 0.2)'
   },
-  songIndex: {
+  songRank: {
     color: 'white',
     fontSize: '14px',
-    fontWeight: '600',
-    textAlign: 'right'
+    fontWeight: '700',
+    textAlign: 'right',
+    opacity: 0.9
   },
   albumArt: {
     width: '80px',
