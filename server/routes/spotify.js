@@ -264,9 +264,13 @@ router.get('/current-playing', async (req, res, next) => {
     const item = data.item;
     if (!item) return res.json({ playing: false });
 
-    const song = item.name;
+const song = item.name;
     const artists = item.artists?.map(a => a.name).join(', ') || '';
     const image = item.album?.images?.[0]?.url || null;
+    
+    const track_id = item.id;
+    const album = item.album?.name || '';
+    const release_date = item.album?.release_date || '';
 
     console.log('[current-playing] Success:', song, '-', artists);
     res.json({
@@ -274,11 +278,13 @@ router.get('/current-playing', async (req, res, next) => {
       song,
       artists,
       image,
+      track_id,         
+      album,            
+      release_date,     
       progress_ms: data.progress_ms,
       duration_ms: item.duration_ms
     });
   } catch (err) {
-    // LOGGING FOR TESTING
     console.error('[current-playing] Unexpected error:', err.message);
     next(err);
   }
