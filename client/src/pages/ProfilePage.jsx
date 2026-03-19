@@ -45,15 +45,17 @@ export default function ProfilePage() {
   const [spotifyStats, setSpotifyStats] = useState(null);
   const [spotifyLoading, setSpotifyLoading] = useState(false);
 
-  // --- Fetching Spotify Data Using Available Endpoints ---
+  // --- Fetching Spotify Data Using Dynamic Endpoints ---
   useEffect(() => {
-    if (isViewingOther) return;
-
     let cancelled = false;
     setSpotifyLoading(true);
     
-    // FIX: Using getTopTracks instead of the missing getSpotifyStats!
-    api.getTopTracks('medium_term')
+    // If viewing a friend, pull from the DB snapshot. If viewing yourself, pull live/cached data.
+    const fetchStats = isViewingOther
+      ? api.getUserSpotifyStats(userId)
+      : api.getTopTracks('medium_term');
+
+    fetchStats
       .then((data) => {
         if (!cancelled) {
           const tracks = data.tracks || [];
@@ -67,7 +69,7 @@ export default function ProfilePage() {
       .finally(() => { if (!cancelled) setSpotifyLoading(false); });
 
     return () => { cancelled = true; };
-  }, [isViewingOther]);
+  }, [isViewingOther, userId]);
 
   // --- Fetch User Profile ---
   useEffect(() => {
@@ -97,6 +99,43 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const handleAddFriend = async () => {
+    if (actionLoading || !profileUser) return;
+    setActionLoading(true);
+    try {
+      await api.sendFriendRequest(profileUser.id);
+      setRelationship((r) => ({ ...r, requestStatus: 'sent' }));
+    } catch (e) {
+      alert(e.message || 'Could not send request');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAccept = async () => {
+    if (actionLoading || !relationship?.requestId) return;
+    setActionLoading(true);
+    try {
+      await api.acceptFriendRequest(relationship.requestId);
+      setRelationship((r) => ({ ...r, areFriends: true, requestStatus: 'none', requestId: null }));
+    } catch (e) {
+      alert(e.message || 'Could not accept');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDecline = async () => {
+    if (actionLoading || !relationship?.requestId) return;
+    setActionLoading(true);
+    try {
+      await api.declineFriendRequest(relationship.requestId);
+      setRelationship((r) => ({ ...r, requestStatus: 'none', requestId: null }));
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleAvatar = () => navigate('/avatar');
   const handleOpenEdit = (field, currentValue) => {
     if (isViewingOther) return; 
@@ -112,7 +151,7 @@ export default function ProfilePage() {
       updateUserInContext(response.user);
       setActiveModal(null);
     } catch (e) {
-      alert('Failed to update profile. Note: Make sure updateProfile is added to api.js!');
+      alert('Failed to update profile.');
     } finally {
       setUpdateLoading(false);
     }
@@ -225,12 +264,31 @@ export default function ProfilePage() {
       
       {(!isViewingOther || profileUser) && !loading && (
       <main style={styles.mainContent}>
+        
+        {isViewingOther && relationship && (
+          <div style={styles.friendActions}>
+            {relationship.areFriends && <span style={styles.friendBadge}>Friends</span>}
+            {relationship.requestStatus === 'sent' && <span style={styles.friendBadge}>Request sent</span>}
+            {relationship.requestStatus === 'received' && (
+              <>
+                <button style={{ ...styles.actionBtn, background: '#22c55e' }} onClick={handleAccept} disabled={actionLoading}>Accept</button>
+                <button style={{ ...styles.actionBtn, background: 'rgba(255,255,255,0.2)' }} onClick={handleDecline} disabled={actionLoading}>Decline</button>
+              </>
+            )}
+            {relationship.requestStatus === 'none' && !relationship.areFriends && (
+              <button style={{ ...styles.actionBtn, background: '#a78bfa', color: '#1f1041' }} onClick={handleAddFriend} disabled={actionLoading}>
+                {actionLoading ? 'Sending...' : 'Add friend'}
+              </button>
+            )}
+          </div>
+        )}
+
         <h1 style={styles.pageTitle}>{name.split(' ')[0]}</h1>
 
         <div className="orbit-system">
           <div style={styles.centerProfile}>
             <div style={styles.avatarContainer}>
-              {savedAvatar ? (
+              {(!isViewingOther && savedAvatar) ? (
                 savedAvatar.mode === 'multiavatar' && savedAvatar.svg ? (
                   <div style={{ width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: savedAvatar.svg }} />
                 ) : savedAvatar.mode === 'custom' ? (
@@ -284,7 +342,7 @@ export default function ProfilePage() {
         </div>
 
         <div style={styles.contentWrapper}>
-          <h3 style={styles.sectionHeader}>Your Stats</h3>
+          <h3 style={styles.sectionHeader}>{isViewingOther ? `${name.split(' ')[0]}'s Stats` : "Your Stats"}</h3>
           <div className="stats-grid">
             <div className="glass-card" onClick={() => setActiveModal('obsession')}><p style={styles.statLabel}>Obsession Level</p><p style={styles.statValueBig}>{listeningStats.obsessionLevel}</p></div>
             <div className="glass-card" onClick={() => setActiveModal('attention')}><p style={styles.statLabel}>Attention Span</p><p style={styles.statValueBig}>{listeningStats.attentionSpan}</p></div>
@@ -292,7 +350,7 @@ export default function ProfilePage() {
             <div className="glass-card" onClick={() => setActiveModal('artist')}><p style={styles.statLabel}>Top Artist</p><p style={styles.statValueBig}>{listeningStats.artistOfMonth}</p></div>
           </div>
 
-          <h3 style={styles.sectionHeader}>Your Top Tracks</h3>
+          <h3 style={styles.sectionHeader}>{isViewingOther ? `${name.split(' ')[0]}'s Top Tracks` : "Your Top Tracks"}</h3>
           <div className="tracks-list">
             {topTracks.map((track, index) => (
               <div key={index} className="glass-card" style={styles.trackItem}>
@@ -328,6 +386,8 @@ const styles = {
   trackTitle: { fontFamily: "'Inter', sans-serif", fontWeight: '800', fontSize: '18px', color: 'white', marginBottom: '4px' },
   trackArtist: { fontFamily: "'Inter', sans-serif", fontWeight: '600', fontSize: '14px', color: '#d8b4fe' },
   actionBtn: { padding: '10px 20px', borderRadius: '9999px', border: 'none', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'transform 0.1s ease' },
+  friendActions: { display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' },
+  friendBadge: { padding: '10px 20px', borderRadius: '9999px', background: 'rgba(167, 139, 250, 0.3)', color: 'white', fontSize: '14px', fontWeight: '600' },
   modalHeader: { fontFamily: "'Jersey 25', sans-serif", fontSize: '40px', color: 'white', letterSpacing: '0.05em', marginBottom: '15px', textShadow: "0 0 15px #bc13fe", marginTop: 0 },
   modalText: { fontFamily: "'Inter', sans-serif", fontSize: '18px', color: '#e9d5ff', lineHeight: '1.6', margin: 0 },
   modalLabel: { fontFamily: "'Press Start 2P', cursive", fontSize: '12px', color: '#a78bfa', textTransform: 'uppercase', marginBottom: '10px', textAlign: 'left', width: '100%' },

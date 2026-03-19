@@ -8,16 +8,10 @@ class ApiClient {
     this.baseURL = API_BASE_URL;
   }
 
-  /**
-   * Get auth token from localStorage
-   */
   getToken() {
     return localStorage.getItem('auth_token');
   }
 
-  /**
-   * Set auth token in localStorage
-   */
   setToken(token) {
     if (token) {
       localStorage.setItem('auth_token', token);
@@ -26,9 +20,6 @@ class ApiClient {
     }
   }
 
-  /**
-   * Make authenticated request
-   */
   async request(endpoint, options = {}) {
     const token = this.getToken();
     const url = `${this.baseURL}${endpoint}`;
@@ -73,27 +64,20 @@ class ApiClient {
   }
 
   async logout() {
-    return this.request('/api/auth/logout', {
-      method: 'POST'
-    });
+    return this.request('/api/auth/logout', { method: 'POST' });
   }
 
-  // To use in dashboard for user name
   async getCurrentUser() {
     return this.request('/api/auth/me');
   }
 
   // Spotify endpoints
   async getSpotifyAuthUrl() {
-    return this.request('/api/spotify/connect', {
-      method: 'GET'
-    });
+    return this.request('/api/spotify/connect', { method: 'GET' });
   }
 
   async getTempToken(token) {
-    return this.request(`/api/spotify/temp-token/${token}`, {
-      method: 'GET'
-    });
+    return this.request(`/api/spotify/temp-token/${token}`, { method: 'GET' });
   }
 
   async getCurrentPlaying() {
@@ -113,7 +97,12 @@ class ApiClient {
     return this.request('/api/spotify/global-top-tracks');
   }
 
-  // Following / Followers (uses Supabase followers table)
+  // NEW: Get a specific user's cached Spotify stats
+  async getUserSpotifyStats(userId) {
+    return this.request(`/api/spotify/profile-stats/${encodeURIComponent(userId)}`);
+  }
+
+  // Following / Followers
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');
     return this.request(`/api/follows/users/search?q=${q}`);
@@ -152,15 +141,11 @@ class ApiClient {
   }
 
   async acceptFriendRequest(requestId) {
-    return this.request(`/api/friends/requests/${requestId}/accept`, {
-      method: 'POST'
-    });
+    return this.request(`/api/friends/requests/${requestId}/accept`, { method: 'POST' });
   }
 
   async declineFriendRequest(requestId) {
-    return this.request(`/api/friends/requests/${requestId}/decline`, {
-      method: 'POST'
-    });
+    return this.request(`/api/friends/requests/${requestId}/decline`, { method: 'POST' });
   }
 
   async getFriends() {
@@ -179,9 +164,14 @@ class ApiClient {
     return this.request(`/api/follows/profile/${encodeURIComponent(userId)}`);
   }
 
-  // ==========================
+  async updateProfile(payload) {
+    return this.request('/api/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+  }
+
   // Feed endpoints
-  // ==========================
   async getFeedPosts() {
     return this.request('/api/feed');
   }
@@ -194,9 +184,7 @@ class ApiClient {
   }
 
   async deleteFeedPost(postId) {
-    return this.request(`/api/feed/${postId}`, {
-      method: 'DELETE'
-    });
+    return this.request(`/api/feed/${postId}`, { method: 'DELETE' });
   }
 }
 
