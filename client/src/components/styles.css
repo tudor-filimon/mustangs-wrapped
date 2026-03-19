@@ -184,7 +184,7 @@ body {
   transform: translateY(-20px); 
   text-shadow:
     0 0 8px rgb(255, 255, 255),
-    0 0 12px rgb(252, 249, 247);
+    0 0 12px rgb(255, 255, 255);
 }
 
 .pill-btn {
@@ -441,7 +441,6 @@ body {
   flex-direction: column;
 }
 
-/* --- Feed Header Layout --- */
 .feed-header {
   height: 80px; 
   padding: 0 40px; 
@@ -466,7 +465,6 @@ body {
   pointer-events: auto;
 }
 
-/* THE FIX: Absolute positioning, right/top properties completely removed from the pill */
 .feed-header-pill {
   position: relative;
   width: 54px;
@@ -1181,6 +1179,823 @@ body {
   flex-direction: column;
 }
 
-@keyframes fadeIn {
-  to { opacity: 1; }
+
+/* =========================================
+   AVATAR & PROFILE PAGE UI (Lucas's Styles)
+   ========================================= */
+
+:root {
+  color-scheme: dark;
+}
+
+/* Main page container */
+.profile-container {
+  position: relative;
+  min-height: 100vh;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: radial-gradient(circle at top, #b06cff 0%, #5a1b9a 40%, #150633 90%);
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* Decorative background shapes (purple blobs) */
+.bg-shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.shape-top {
+  width: 320px;
+  height: 320px;
+  background: #e28dff;
+  top: -120px;
+  right: -80px;
+}
+
+.shape-bottom {
+  width: 360px;
+  height: 360px;
+  background: #7b3cff;
+  bottom: -140px;
+  left: -120px;
+}
+
+/* Header / back button */
+.profile-header {
+  display: flex;
+  justify-content: flex-end;
+  z-index: 1;
+}
+
+.btn-back {
+  background: rgba(24, 24, 24, 0.6);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Layout of the main content */
+.profile-content {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 1;
+}
+
+/* Profile identity */
+.profile-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Default avatar figure */
+.profile-avatar {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 20%, #ffffff 0%, #d2d2d2 35%, #9a9a9a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.profile-avatar .multiavatar-preview {
+width: 100%;
+height: 100%;
+}
+
+.avatar-circle {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  width: 38%;
+  height: 38%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #f4f4f4;
+}
+
+.avatar-shoulders {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  width: 70%;
+  height: 40%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 15% 15%;
+  background: #dedede;
+}
+
+.profile-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.profile-handle {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+/* 2x2 info grid (Faculty / Year / Major / Chromosomes) */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin-top: 8px;
+}
+
+.stat-box {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Sections ("Your Stats", "Your top Tracks") */
+.section-container {
+  margin-top: 8px;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+/* Usage stats grid (3 items + 1 full width) */
+.usage-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  text-align: center;
+}
+
+.usage-stats-grid .stat-item {
+  background: rgba(22, 8, 58, 0.75);
+  border-radius: 16px;
+  padding: 10px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.usage-stats-grid .full-width {
+  grid-column: 1 / -1;
+}
+
+/* Top tracks cards */
+.tracks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.track-card {
+  background: rgba(170, 123, 255, 0.95);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  color: #160536;
+}
+
+.track-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.track-artist {
+  font-size: 0.8rem;
+}
+
+/* Small screen tweaks */
+@media (min-width: 480px) {
+  .profile-container {
+    max-width: 450px;
+    margin: 0 auto;
+    border-radius: 24px;
+  }
+
+  /* Make avatar/profile pages use full width like the main app */
+  .avatar-page.profile-container {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+}
+
+/* Avatar page layout */
+.avatar-page {
+  display: flex;
+  flex-direction: column;
+}
+
+.avatar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 768px) {
+  .avatar-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.avatar-preview-card {
+  background: rgba(22, 8, 58, 0.8);
+  border-radius: 20px;
+  padding: 18px 16px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+  min-height: 360px;
+}
+
+.avatar-preview-background {
+  position: relative;
+  margin-top: 8px;
+  border-radius: 24px;
+  padding: 22px 0;
+  background: radial-gradient(circle at top, #c4a5ff 0%, #5b1b9b 35%, #160633 85%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-mode-toggle {
+display: flex;
+justify-content: center;
+gap: 8px;
+margin-top: 8px;
+}
+
+.avatar-character {
+  position: relative;
+  width: 220px;
+  height: 280px;
+  margin: 0 auto;
+  border-radius: 32px;
+  display: block;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: visible;
+  z-index: 1;
+}
+
+.avatar-body {
+  position: absolute;
+  top: 88px;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 140px;
+  height: 112px;
+  border-radius: 46px 46px 22px 22px;
+  background: #111827;
+  --clothing-color: #4f46e5;
+}
+
+.avatar-body-size-small {
+  width: 100px;
+  height: 88px;
+  border-radius: 36px 36px 18px 18px;
+}
+
+.avatar-body-size-medium {
+  width: 140px;
+  height: 112px;
+  border-radius: 46px 46px 22px 22px;
+}
+
+.avatar-body-size-large {
+  width: 172px;
+  height: 132px;
+  border-radius: 52px 52px 24px 24px;
+}
+
+.avatar-body-size-chud {
+  width: 200px;
+  height: 152px;
+  border-radius: 58px 58px 26px 26px;
+}
+
+.avatar-head {
+  position: absolute;
+  top: 24px;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --hair-color: #111827;
+  z-index: 2;
+  isolation: isolate;
+}
+
+/* Skin circle layer – above hair, below face */
+.avatar-head-skin {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--skin-color, #f9e0d2);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Hair styles – z-index 0 so they sit behind head-skin (1) and face (2) */
+.avatar-hair-short::before,
+.avatar-hair-long::before,
+.avatar-hair-afro::before,
+.avatar-hair-buzz::before {
+  content: '';
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 40px;
+  border-radius: 90px 90px 42px 42px;
+  background: var(--hair-color);
+  z-index: 0;
+  box-shadow:
+    0 4px 0 rgba(0, 0, 0, 0.25),
+    0 -4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.avatar-hair-long::before {
+  height: 40px;
+  border-radius: 90px 90px 42px 42px;
+}
+
+.avatar-hair-long::after {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 90px;
+  border-radius: 60px;
+  background: linear-gradient(
+    90deg,
+    var(--hair-color) 0,
+    var(--hair-color) 20px,
+    transparent 20px,
+    transparent 76px,
+    var(--hair-color) 76px,
+    var(--hair-color) 100%
+  );
+  z-index: 0;
+  box-shadow:
+    -18px 6px 0 rgba(0, 0, 0, 0.28),
+    18px 6px 0 rgba(0, 0, 0, 0.28);
+}
+
+.avatar-hair-afro::before {
+  height: 76px;
+  width: 104px;
+  top: -28px;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 8px rgba(0, 0, 0, 0.4),
+    6px 4px 0 rgba(0, 0, 0, 0.45),
+    -6px 4px 0 rgba(0, 0, 0, 0.45);
+}
+
+.avatar-hair-buzz::before {
+  height: 30px;
+  border-radius: 999px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--hair-color) 0,
+    var(--hair-color) 6px,
+    rgba(0, 0, 0, 0.3) 6px,
+    rgba(0, 0, 0, 0.3) 8px
+  );
+}
+
+/* Clothing variations */
+.avatar-clothing-hoodie {
+  background: var(--clothing-color);
+  border-radius: 40px 40px 18px 18px;
+  position: relative;
+}
+
+.avatar-clothing-hoodie::before,
+.avatar-clothing-hoodie::after {
+  content: '';
+  position: absolute;
+  bottom: 14px;
+  width: 26px;
+  height: 16px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.avatar-clothing-hoodie::before {
+  left: 20px;
+}
+
+.avatar-clothing-hoodie::after {
+  right: 20px;
+}
+
+.avatar-clothing-jersey {
+  background: var(--clothing-color);
+  border-radius: 24px 24px 18px 18px;
+  position: relative;
+  box-shadow: inset 0 0 0 3px rgba(249, 250, 251, 0.7);
+}
+
+.avatar-clothing-jersey::before {
+  content: '23';
+  position: absolute;
+  top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 800;
+  font-size: 20px;
+  color: #111827;
+}
+
+.avatar-clothing-tshirt {
+  background: var(--clothing-color);
+  border-radius: 32px 32px 20px 20px;
+  position: relative;
+}
+
+.avatar-clothing-tshirt::before,
+.avatar-clothing-tshirt::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  width: 26px;
+  height: 22px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.15);
+}
+
+.avatar-clothing-tshirt::before {
+  left: -4px;
+}
+
+.avatar-clothing-tshirt::after {
+  right: -4px;
+}
+
+/* Face and expressions */
+.avatar-face {
+  position: relative;
+  width: 70%;
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.avatar-eyes {
+  display: flex;
+  justify-content: space-between;
+  width: 70%;
+  margin-bottom: 6px;
+}
+
+.avatar-eye {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #111827;
+  box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.7);
+}
+
+.avatar-mouth {
+  width: 26px;
+  height: 14px;
+  border-radius: 0 0 999px 999px;
+  border: 3px solid transparent;
+  border-top: none;
+  margin-top: 2px;
+}
+
+.avatar-expression-neutral .avatar-mouth {
+  border-color: #111827;
+  border-radius: 999px;
+  height: 0;
+  border-width: 2px;
+}
+
+.avatar-expression-happy .avatar-mouth {
+  border-color: #ef4444;
+}
+
+.avatar-expression-chill .avatar-mouth {
+  width: 14px;
+  height: 20px;
+  border: none;
+  border-radius: 0 0 10px 10px;
+  background: #e88a9a;
+  margin-top: 6px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+.avatar-expression-surprised .avatar-mouth {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border-width: 0;
+  background: #111827;
+  box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.7);
+}
+
+.avatar-preview-label {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  text-align: center;
+}
+
+.avatar-name-display {
+min-height: 32px;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.avatar-controls {
+  background: rgba(22, 8, 58, 0.8);
+  border-radius: 20px;
+  padding: 16px 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+}
+
+.avatar-control-group + .avatar-control-group {
+  margin-top: 16px;
+}
+
+.avatar-control-group h3 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.avatar-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.avatar-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  background: rgba(15, 23, 42, 0.7);
+  color: #f9fafb;
+  cursor: pointer;
+}
+
+.avatar-pill.active {
+  background: #f97316;
+  color: #111827;
+  border-color: #fed7aa;
+}
+
+.primary-button {
+  margin-top: 16px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #f97316, #fb7185);
+  color: #0b0418;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.primary-button:hover {
+  filter: brightness(1.05);
+}
+
+.profile-avatar-cta {
+  margin-top: 10px;
+}
+
+/* Limbs */
+.avatar-arm,
+.avatar-leg {
+  position: absolute;
+  background: var(--skin-color, #f9e0d2);
+}
+
+.avatar-arm {
+  top: 32px;
+  width: 26px;
+  height: 72px;
+  border-radius: 20px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.avatar-arm-left {
+  left: -6px;
+  transform-origin: top right;
+  transform: rotate(12deg);
+}
+
+.avatar-arm-right {
+  right: -6px;
+  transform-origin: top left;
+  transform: rotate(-12deg);
+}
+
+.avatar-leg {
+  bottom: -55px;
+  width: 30px;
+  height: 70px;
+  border-radius: 24px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.avatar-leg-left {
+  left: 30px;
+}
+
+.avatar-leg-right {
+  right: 30px;
+}
+
+/* Animated musical notes */
+.avatar-notes-layer {
+  position: absolute;
+  inset: -5%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.music-note {
+  position: absolute;
+  font-size: 26px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+  animation: float-note 9s ease-in-out infinite;
+}
+
+.note-1 {
+  left: 10%;
+  bottom: 0;
+  animation-delay: 0s;
+}
+
+.note-2 {
+  left: 50%;
+  bottom: 5%;
+  animation-delay: 2s;
+}
+
+.note-3 {
+  left: 82%;
+  bottom: 8%;
+  animation-delay: 4s;
+}
+
+.note-4 {
+  left: 30%;
+  bottom: 2%;
+  animation-delay: 6s;
+}
+
+@keyframes float-note {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.9);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-90%) translateX(-20px) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-180%) translateX(20px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+.multiavatar-wrapper {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border-radius: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #f9fafb 0%, #d1d5db 40%, #111827 90%);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  z-index: 1;
+}
+
+.multiavatar-preview svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.avatar-saved-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  color: #f9fafb;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(248, 250, 252, 0.25);
+  animation: fade-in-out 1.6s ease-in-out forwards;
+  z-index: 50;
+}
+
+@keyframes fade-in-out {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+
+.avatar-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(15, 23, 42, 0.8);
+  color: #f9fafb;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.avatar-input::placeholder {
+  color: rgba(249, 250, 251, 0.6);
 }
