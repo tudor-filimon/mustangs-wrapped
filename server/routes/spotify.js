@@ -623,4 +623,152 @@ router.get('/global-top-tracks', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/spotify/faculty-top-tracks
+ * Returns top 50 tracks for users in the same cohort as the current user.
+ * Cohort priority: same major (if available), otherwise same faculty.
+ */
+router.get('/faculty-top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { data: me, error: meErr } = await supabaseAdmin
+      .from('users')
+      .select('faculty, major')
+      .eq('id', user.id)
+      .single();
+    if (meErr || !me) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    const year = new Date().getFullYear();
+    const timeRange = req.query.time_range || 'medium_term';
+
+    let cohortField = null;
+    let cohortValue = null;
+    if (me.major && String(me.major).trim().length > 0) {
+      cohortField = 'major';
+      cohortValue = me.major;
+    } else if (me.faculty && String(me.faculty).trim().length > 0) {
+      cohortField = 'faculty';
+      cohortValue = me.faculty;
+    } else {
+      return res.json({ tracks: [], cohort: null });
+    }
+
+    const { data: cohortUsers, error: cohortUsersErr } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq(cohortField, cohortValue);
+    if (cohortUsersErr) {
+      return res.status(500).json({ error: 'Failed to fetch cohort users' });
+    }
+
+    const cohortUserIds = (cohortUsers || []).map((u) => u.id);
+    if (cohortUserIds.length === 0) {
+      return res.json({ tracks: [], cohort: { field: cohortField, value: cohortValue } });
+    }
+
+    const { data: accounts, error: accountsErr } = await supabaseAdmin
+      .from('spotify_accounts')
+      .select('id, user_id')
+      .in('user_id', cohortUserIds);
+    if (accountsErr) {
+      return res.status(500).json({ error: 'Failed to fetch Spotify accounts' });
+    }
+
+    const accountIds = (accounts || []).map((a) => a.id);
+    if (accountIds.length === 0) {
+      return res.json({ tracks: [], cohort: { field: cohortField, value: cohortValue } });
+    }
+
+    const { data: snapshots, error: snapshotErr } = await supabaseAdmin
+      .from('wrapped_snapshot')
+      .select('id')
+      .in('spotify_acc_id', accountIds)
+      .eq('year', year)
+      .eq('time_range', timeRange);
+    if (snapshotErr) {
+      return res.status(500).json({ error: 'Failed to fetch snapshot data' });
+    }
+
+    const snapshotIds = (snapshots || []).map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({ tracks: [], cohort: { field: cohortField, value: cohortValue } });
+    }
+    const snapshotIdSet = new Set(snapshotIds);
+
+    const { data: items, error: itemsErr } = await supabaseAdmin
+      .from('wrapped_items')
+      .select('spotify_id, name, artists, image_url, snapshot_id, rank')
+      .eq('item_type', 'track')
+      .in('snapshot_id', snapshotIds);
+    if (itemsErr) {
+      return res.status(500).json({ error: 'Failed to fetch faculty tracks' });
+    }
+
+    const totals = new Map();
+    for (const item of items || []) {
+      const id = item.spotify_id;
+      const snapshotId = item.snapshot_id;
+      if (!snapshotIdSet.has(snapshotId) || !id) continue;
+
+      if (!totals.has(id)) {
+        totals.set(id, {
+          spotify_id: id,
+          name: item.name,
+          artists: item.artists || '',
+          image_url: item.image_url,
+          _snapshots: new Set(),
+          rank_sum: 0,
+          rank_count: 0
+        });
+      }
+
+      const row = totals.get(id);
+      if ((!row.artists || row.artists.trim().length === 0) && item.artists) {
+        row.artists = item.artists;
+      }
+      row._snapshots.add(snapshotId);
+      if (typeof item.rank === 'number') {
+        row.rank_sum += item.rank;
+        row.rank_count += 1;
+      }
+    }
+
+    const top50 = Array.from(totals.values())
+      .map((row) => ({
+        spotify_id: row.spotify_id,
+        name: row.name,
+        artists: row.artists,
+        image_url: row.image_url,
+        appearance_count: row._snapshots.size,
+        avg_rank: row.rank_count > 0 ? row.rank_sum / row.rank_count : 999
+      }))
+      .sort((a, b) => {
+        if (b.appearance_count !== a.appearance_count) {
+          return b.appearance_count - a.appearance_count;
+        }
+        return a.avg_rank - b.avg_rank;
+      })
+      .slice(0, 50);
+
+    res.json({
+      tracks: top50,
+      cohort: { field: cohortField, value: cohortValue }
+    });
+  } catch (err) {
+    console.error('[faculty-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
 export default router;

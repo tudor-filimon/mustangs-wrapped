@@ -113,6 +113,10 @@ class ApiClient {
     return this.request('/api/spotify/global-top-tracks');
   }
 
+  async getFacultyTopTracks() {
+    return this.request('/api/spotify/faculty-top-tracks');
+  }
+
   // Following / Followers (uses Supabase followers table)
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');
