@@ -113,6 +113,10 @@ class ApiClient {
     return this.request('/api/spotify/global-top-tracks');
   }
 
+  async getFacultyTopTracks() {
+    return this.request('/api/spotify/faculty-top-tracks');
+  }
+
   // Friends endpoints
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');

@@ -32,7 +32,6 @@ export default function PlaylistView() {
         spotifyId: s.spotifyId || (typeof s.id === 'string' ? s.id : null),
         title: s.title,
         album: s.album || '',
-        length: s.length || '–',
         imageUrl: s.imageUrl ?? null
       })));
       return;
@@ -46,7 +45,6 @@ export default function PlaylistView() {
             spotifyId: t.spotify_id || null,
             title: t.name,
             album: t.artists || 'Unknown artist',
-            length: '–',
             imageUrl: t.image_url ?? null
           })));
         }
@@ -68,8 +66,6 @@ export default function PlaylistView() {
           <div style={styles.header}>
             <div style={styles.titleSection}>
               <h1 style={styles.playlistTitle}>{playlistName}</h1>
-              <p style={styles.playlistLength}>{songs.length} song{songs.length !== 1 ? 's' : ''}</p>
-              <div style={styles.underline}></div>
             </div>
             <button 
               style={styles.backButton}
@@ -92,9 +88,6 @@ export default function PlaylistView() {
                     <img src={song.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
                   ) : null}
                 </div>
-                
-                {/* Song Length */}
-                <div style={styles.songLength}>{song.length}</div>
                 
                 {/* Song Info */}
                 <div style={styles.songInfo}>
@@ -162,18 +155,6 @@ const styles = {
     `,
     lineHeight: '1.4'
   },
-  playlistLength: {
-    fontSize: '14px',
-    color: 'white',
-    margin: '0 0 12px 0',
-    opacity: 0.9
-  },
-  underline: {
-    height: '2px',
-    backgroundColor: 'white',
-    maxWidth: '250px',
-    margin: '0 auto'
-  },
   backButton: {
     backgroundColor: '#e9d5ff',
     border: 'none',
@@ -192,7 +173,7 @@ const styles = {
   },
   songRow: {
     display: 'grid',
-    gridTemplateColumns: '32px 80px 120px 1fr 140px',
+    gridTemplateColumns: '32px 80px 1fr 140px',
     alignItems: 'center',
     gap: '20px',
     padding: '20px 0',
@@ -210,11 +191,6 @@ const styles = {
     height: '80px',
     backgroundColor: '#d1d5db',
     borderRadius: '4px'
-  },
-  songLength: {
-    color: 'white',
-    fontSize: '14px',
-    fontWeight: '600'
   },
   songInfo: {
     display: 'flex',

@@ -34,6 +34,9 @@ function HomePage() {
   const [theme, setTheme] = useState('dark'); 
   const [showWfnModal, setShowWfnModal] = useState(false);
   const [showAlbumModal, setShowAlbumModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   
   // State to track button text/feedback
   const [feedStatus, setFeedStatus] = useState('');
@@ -47,6 +50,83 @@ function HomePage() {
   const fallbackAvatar = user?.avatar_url || '/src/assets/images/default-avatar.png';
   
   const [nowPlaying, setNowPlaying] = useState(null);
+
+  const mapSongsForPlaylist = (tracks = []) =>
+    tracks.slice(0, 50).map((t, i) => ({
+      id: t.spotify_id || i + 1,
+      spotifyId: t.spotify_id || null,
+      title: t.name,
+      album: t.artists || 'Unknown artist',
+      imageUrl: t.image || t.image_url || null
+    }));
+
+  const handlePlaylistSearch = async (input = searchQuery) => {
+    const q = (input || '').trim().toLowerCase();
+    if (!q) return;
+
+    try {
+      if (q.includes('your') || q.includes('my')) {
+        const data = await api.getTopTracks('medium_term');
+        const songs = mapSongsForPlaylist(data?.tracks || []);
+        return navigate('/playlist', {
+          state: { playlistName: 'Your Top 50 Songs', songs }
+        });
+      }
+
+      if (q.includes('global')) {
+        const data = await api.getGlobalTopTracks();
+        const songs = mapSongsForPlaylist(data?.tracks || []);
+        return navigate('/playlist', {
+          state: { playlistName: 'Global Top 50 Songs', songs }
+        });
+      }
+
+      if (q.includes('faculty') || q.includes('computer science') || q.includes('comp sci')) {
+        const data = await api.getFacultyTopTracks();
+        const songs = mapSongsForPlaylist(data?.tracks || []);
+        const cohortName = data?.cohort?.value ? `${data.cohort.value} Top 50 Songs` : 'Faculty Top 50 Songs';
+        return navigate('/playlist', {
+          state: { playlistName: cohortName, songs }
+        });
+      }
+    } catch (err) {
+      console.warn('Playlist search failed:', err.message);
+    }
+  };
+
+  const playlistSuggestions = [
+    {
+      id: 'your-top-50',
+      label: 'Your Top 50 Songs',
+      matches: ['your', 'my', 'top 50', 'wrapped']
+    },
+    {
+      id: 'global-top-50',
+      label: 'Global Top 50 Songs',
+      matches: ['global', 'world', 'everyone']
+    },
+    {
+      id: 'faculty-top-50',
+      label: 'Faculty Top 50 Songs',
+      matches: ['faculty', 'computer science', 'comp sci', 'cs']
+    }
+  ];
+
+  const queryLower = (searchQuery || '').trim().toLowerCase();
+  const filteredSuggestions = queryLower
+    ? playlistSuggestions.filter((s) =>
+        s.label.toLowerCase().includes(queryLower) ||
+        s.matches.some((m) => m.includes(queryLower) || queryLower.includes(m))
+      )
+    : [];
+
+  useEffect(() => {
+    if (!showSearchSuggestions || filteredSuggestions.length === 0) {
+      setActiveSuggestionIndex(-1);
+      return;
+    }
+    setActiveSuggestionIndex(0);
+  }, [searchQuery, showSearchSuggestions]);
 
   // Load Avatar from Local Storage
   useEffect(() => {
@@ -172,8 +252,72 @@ function HomePage() {
           </button>
           
           <div className="search-bar">
-            <span className='searchIcon'><img src="src\assets\images\searchIcon.svg" alt="search icon" /></span>
-            <input type="text" placeholder="Find what Mustangs are listening to" />
+            <span className='searchIcon' onClick={handlePlaylistSearch} style={{ cursor: 'pointer' }}>
+              <img src="src\assets\images\searchIcon.svg" alt="search icon" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search playlists: your, global, faculty"
+              value={searchQuery}
+              onFocus={() => setShowSearchSuggestions(true)}
+              onBlur={() => {
+                window.setTimeout(() => setShowSearchSuggestions(false), 120);
+              }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowSearchSuggestions(true);
+              }}
+              onKeyDown={(e) => {
+                if (showSearchSuggestions && filteredSuggestions.length > 0 && e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((prev) =>
+                    prev < filteredSuggestions.length - 1 ? prev + 1 : 0
+                  );
+                  return;
+                }
+                if (showSearchSuggestions && filteredSuggestions.length > 0 && e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((prev) =>
+                    prev > 0 ? prev - 1 : filteredSuggestions.length - 1
+                  );
+                  return;
+                }
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (showSearchSuggestions && filteredSuggestions.length > 0 && activeSuggestionIndex >= 0) {
+                    const selected = filteredSuggestions[activeSuggestionIndex];
+                    setSearchQuery(selected.label);
+                    setShowSearchSuggestions(false);
+                    handlePlaylistSearch(selected.label);
+                    return;
+                  }
+                  handlePlaylistSearch();
+                }
+                if (e.key === 'Escape') {
+                  setShowSearchSuggestions(false);
+                }
+              }}
+            />
+            {showSearchSuggestions && filteredSuggestions.length > 0 ? (
+              <div className="search-suggestions">
+                {filteredSuggestions.map((suggestion, index) => (
+                  <button
+                    key={suggestion.id}
+                    type="button"
+                    className={`search-suggestion-item ${index === activeSuggestionIndex ? 'active' : ''}`}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setSearchQuery(suggestion.label);
+                      setShowSearchSuggestions(false);
+                      handlePlaylistSearch(suggestion.label);
+                    }}
+                    onMouseEnter={() => setActiveSuggestionIndex(index)}
+                  >
+                    {suggestion.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
       
           <div className="header-center">
