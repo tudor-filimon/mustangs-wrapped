@@ -4,7 +4,8 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import spotifyRoutes from './routes/spotify.js';
 import friendsRoutes from './routes/friends.js';
-import feedRoutes from './routes/feed.js'; // <-- NEW IMPORT
+import followsRoutes from './routes/follows.js';
+import feedRoutes from './routes/feed.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -25,7 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/spotify', spotifyRoutes);
 app.use('/api/friends', friendsRoutes);
-app.use('/api/feed', feedRoutes); // <-- NEW ROUTE CONNECTION
+app.use('/api/follows', followsRoutes);
+app.use('/api/feed', feedRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

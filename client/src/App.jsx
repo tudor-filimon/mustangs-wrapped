@@ -48,6 +48,11 @@ function App() {
               <ProfilePage />
             </ProtectedRoute>
           } />
+          <Route path="/profile/:userId" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
           
           <Route path="/feed" element={
             <ProtectedRoute>
