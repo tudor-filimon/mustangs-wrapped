@@ -117,6 +117,38 @@ class ApiClient {
     return this.request('/api/spotify/faculty-top-tracks');
   }
 
+  async getFriendsTopTracks(friendIds = []) {
+    const ids = Array.isArray(friendIds)
+      ? friendIds.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+    const q = encodeURIComponent(ids.join(','));
+    return this.request(`/api/spotify/friends-top-tracks?friend_ids=${q}`);
+  }
+
+  async getSharedPlaylists() {
+    return this.request('/api/spotify/shared-playlists');
+  }
+
+  async createSharedPlaylist(name, friendIds = []) {
+    return this.request('/api/spotify/shared-playlists', {
+      method: 'POST',
+      body: JSON.stringify({ name, friend_ids: friendIds })
+    });
+  }
+
+  async renameSharedPlaylist(playlistId, name) {
+    return this.request(`/api/spotify/shared-playlists/${encodeURIComponent(playlistId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name })
+    });
+  }
+
+  async deleteSharedPlaylist(playlistId) {
+    return this.request(`/api/spotify/shared-playlists/${encodeURIComponent(playlistId)}`, {
+      method: 'DELETE'
+    });
+  }
+
   // Following / Followers (uses Supabase followers table)
   async searchUsers(query) {
     const q = encodeURIComponent(query || '');

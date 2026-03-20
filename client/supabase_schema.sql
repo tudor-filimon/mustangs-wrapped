@@ -212,3 +212,73 @@ CREATE INDEX idx_friend_requests_receiver ON public.friend_requests(receiver_id)
 CREATE INDEX idx_friend_requests_status ON public.friend_requests(status);
 CREATE INDEX idx_friends_user1 ON public.friends(user1_id);
 CREATE INDEX idx_friends_user2 ON public.friends(user2_id);
+
+-- ============================================
+-- Shared Wrapped Playlists
+-- ============================================
+
+CREATE TABLE public.shared_wrapped_playlists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE public.shared_wrapped_playlist_members (
+  playlist_id UUID NOT NULL REFERENCES public.shared_wrapped_playlists(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (playlist_id, user_id)
+);
+
+CREATE TABLE public.shared_wrapped_playlist_tracks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  playlist_id UUID NOT NULL REFERENCES public.shared_wrapped_playlists(id) ON DELETE CASCADE,
+  position INT NOT NULL CHECK (position >= 1 AND position <= 50),
+  spotify_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  artists TEXT,
+  image_url TEXT,
+  UNIQUE (playlist_id, position)
+);
+
+ALTER TABLE public.shared_wrapped_playlists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shared_wrapped_playlist_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shared_wrapped_playlist_tracks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view playlists they own or are members of"
+  ON public.shared_wrapped_playlists FOR SELECT
+  USING (
+    owner_user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM public.shared_wrapped_playlist_members m
+      WHERE m.playlist_id = shared_wrapped_playlists.id
+        AND m.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Owners can manage their shared playlists"
+  ON public.shared_wrapped_playlists FOR ALL
+  USING (owner_user_id = auth.uid())
+  WITH CHECK (owner_user_id = auth.uid());
+
+CREATE POLICY "Users can view memberships they are in"
+  ON public.shared_wrapped_playlist_members FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can view shared playlist tracks they can access"
+  ON public.shared_wrapped_playlist_tracks FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.shared_wrapped_playlists p
+      LEFT JOIN public.shared_wrapped_playlist_members m ON m.playlist_id = p.id
+      WHERE p.id = shared_wrapped_playlist_tracks.playlist_id
+        AND (p.owner_user_id = auth.uid() OR m.user_id = auth.uid())
+    )
+  );
+
+CREATE INDEX idx_shared_wrapped_playlists_owner ON public.shared_wrapped_playlists(owner_user_id);
+CREATE INDEX idx_shared_wrapped_playlist_members_user ON public.shared_wrapped_playlist_members(user_id);
+CREATE INDEX idx_shared_wrapped_playlist_tracks_playlist ON public.shared_wrapped_playlist_tracks(playlist_id);
