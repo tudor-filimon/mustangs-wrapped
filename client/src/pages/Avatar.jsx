@@ -218,9 +218,9 @@ function Avatar() {
       <div className="bg-shape shape-top"></div>
       <div className="bg-shape shape-bottom"></div>
 
-      <header className="profile-header">
+      <header className="profile-header" style={{ justifyContent: 'flex-start' }}>
         <button
-          className="btn-back"
+          className="feed-back-btn"
           type="button"
           onClick={() => window.history.back()}
         >

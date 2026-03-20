@@ -25,12 +25,13 @@ export default function CampusMaps() {
       <div className="global-gradient-bg"></div>
       <div className="infinite-grid-bg"></div>
 
-      {/* Navigation */}
-      <button className="back-button-neon" onClick={() => navigate(-1)}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back
+      {/* Navigation (Updated to match Feed Page) */}
+      <button 
+        className="feed-back-btn" 
+        style={{ position: 'absolute', top: '30px', left: '40px', zIndex: 100 }} 
+        onClick={() => navigate(-1)}
+      >
+        ← Back
       </button>
 
       {/* Main Interactive Map */}
