@@ -4,6 +4,7 @@ import '../components/styles.css';
 import AnimatedBackground from '../components/AnimatedBackground';
 import TiltedCard from '../components/TiltedCard';
 import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 
 const styles = {
   container: {
@@ -110,15 +111,124 @@ const styles = {
     transition: 'background-color 0.3s',
     outline: 'none',
     boxShadow: 'none'
+  },
+  cardWrap: {
+    position: 'relative',
+    width: '100%',
+    marginBottom: '24px'
+  },
+  deletePlaylistButton: {
+    position: 'absolute',
+    top: '10px',
+    right: '10px',
+    zIndex: 5,
+    minWidth: '72px',
+    height: '34px',
+    padding: '0 12px',
+    borderRadius: '9999px',
+    border: 'none',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '700',
+    letterSpacing: '0.02em',
+    lineHeight: '1',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  modalBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(7, 2, 19, 0.7)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 60,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: '520px',
+    borderRadius: '18px',
+    border: '1px solid rgba(255, 255, 255, 0.24)',
+    background: `
+      radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.18) 0%, transparent 40%),
+      linear-gradient(145deg, rgba(168, 85, 247, 0.9) 0%, rgba(124, 58, 237, 0.88) 55%, rgba(67, 56, 202, 0.9) 100%)
+    `,
+    boxShadow: '0 20px 56px rgba(76, 29, 149, 0.52)',
+    padding: '26px 22px',
+    color: 'white'
+  },
+  modalTitle: {
+    margin: '0 0 10px 0',
+    fontSize: '20px',
+    fontFamily: "'Press Start 2P', cursive",
+    lineHeight: '1.45'
+  },
+  modalInput: {
+    width: '100%',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    background: 'rgba(10, 6, 34, 0.45)',
+    color: 'white',
+    padding: '12px 14px',
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box'
+  },
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '10px',
+    marginTop: '16px'
+  },
+  modalCancelButton: {
+    border: '1px solid rgba(255, 255, 255, 0.35)',
+    background: 'rgba(255, 255, 255, 0.08)',
+    color: 'white',
+    borderRadius: '9999px',
+    padding: '10px 18px',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  modalCreateButton: {
+    border: 'none',
+    background: '#e9d5ff',
+    color: '#581c87',
+    borderRadius: '9999px',
+    padding: '10px 18px',
+    fontWeight: 800,
+    cursor: 'pointer'
+  },
+  coverOverlay: {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '14px'
   }
 };
 
 export default function MustangWrapped() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [topTracks, setTopTracks] = useState([]);
   const [globalTopTracks, setGlobalTopTracks] = useState([]);
   const [facultyTopTracks, setFacultyTopTracks] = useState([]);
+  const [customPlaylists, setCustomPlaylists] = useState([]);
   const [facultyPlaylistTitle, setFacultyPlaylistTitle] = useState('Faculty Top 50 Songs');
+  const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [friends, setFriends] = useState([]);
+  const [selectedFriendIds, setSelectedFriendIds] = useState([]);
+  const [isCreatingPlaylist, setIsCreatingPlaylist] = useState(false);
+  const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -184,10 +294,105 @@ export default function MustangWrapped() {
     imageUrl: t.image_url
   }));
 
+  useEffect(() => {
+    if (!user?.id) {
+      setCustomPlaylists([]);
+      return;
+    }
+
+    api.getSharedPlaylists()
+      .then((data) => {
+        setCustomPlaylists(Array.isArray(data?.playlists) ? data.playlists : []);
+      })
+      .catch((error) => {
+        console.warn('Could not load shared playlists:', error?.message || error);
+        setCustomPlaylists([]);
+      });
+  }, [user?.id]);
+
+  const handleAddPlaylist = () => {
+    if (!user?.id) {
+      window.alert('Please sign in first.');
+      return;
+    }
+
+    if (!top50Songs.length) {
+      window.alert('Your Top 50 songs are still loading.');
+      return;
+    }
+
+    const suggestedName = `Wrapped ${customPlaylists.length + 1}`;
+    setNewPlaylistName(suggestedName);
+    setSelectedFriendIds([]);
+    setIsNameModalOpen(true);
+    setIsLoadingFriends(true);
+    Promise.allSettled([api.getFriends(), api.getFollowing()])
+      .then(([friendsResult, followingResult]) => {
+        const legacyFriends = friendsResult.status === 'fulfilled' && Array.isArray(friendsResult.value?.friends)
+          ? friendsResult.value.friends
+          : [];
+        const following = followingResult.status === 'fulfilled' && Array.isArray(followingResult.value?.following)
+          ? followingResult.value.following
+          : [];
+
+        const mergedMap = new Map();
+        [...legacyFriends, ...following].forEach((person) => {
+          if (person?.id) mergedMap.set(person.id, person);
+        });
+        setFriends(Array.from(mergedMap.values()));
+      })
+      .catch(() => {
+        setFriends([]);
+      })
+      .finally(() => {
+        setIsLoadingFriends(false);
+      });
+  };
+
+  const handleCreatePlaylist = async () => {
+    const playlistName = newPlaylistName.trim();
+    if (!playlistName || !user?.id || isCreatingPlaylist) return;
+
+    setIsCreatingPlaylist(true);
+    try {
+      const createData = await api.createSharedPlaylist(playlistName, selectedFriendIds);
+      const created = createData?.playlist;
+      if (!created) throw new Error('No playlist returned');
+      setCustomPlaylists((prev) => [created, ...prev]);
+      setIsNameModalOpen(false);
+      setNewPlaylistName('');
+      setSelectedFriendIds([]);
+    } catch (error) {
+      console.warn('Could not create friend Wrapped playlist:', error);
+      window.alert('Could not build playlist from selected friends.');
+    } finally {
+      setIsCreatingPlaylist(false);
+    }
+  };
+
+  const handleDeletePlaylist = (playlistId) => {
+    api.deleteSharedPlaylist(playlistId)
+      .then(() => {
+        setCustomPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
+      })
+      .catch((error) => {
+        console.warn('Could not delete shared playlist:', error?.message || error);
+      });
+  };
+
   const wrappedItems = [
     { id: 1, title: 'Your Top 50 Songs', isTop50Playlist: true },
     { id: 2, title: 'Global Top 50 Songs', isGlobalTop50Playlist: true },
-    { id: 3, title: facultyPlaylistTitle, isFacultyTop50Playlist: true }
+    { id: 3, title: facultyPlaylistTitle, isFacultyTop50Playlist: true },
+    ...customPlaylists.map((playlist) => ({
+      id: playlist.id,
+      title: playlist.title,
+      isCustomPlaylist: true,
+      songs: playlist.songs,
+      isOwner: Boolean(playlist.isOwner),
+      selectedFriendIds: playlist.selectedFriendIds || [],
+      selectedFriendNames: playlist.selectedFriendNames || []
+    }))
   ];
 
   // Group items into chunks of 3
@@ -220,7 +425,7 @@ export default function MustangWrapped() {
                 <div key={item.id} style={styles.card}>
                   {/* Playlist Cover */}
                   <div
-                    style={{ width: '100%', marginBottom: '24px' }}
+                    style={styles.cardWrap}
                     role="button"
                     tabIndex={0}
                     onClick={() => navigate('/playlist', {
@@ -230,6 +435,16 @@ export default function MustangWrapped() {
                           ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
                         : item.isFacultyTop50Playlist
                           ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
+                        : item.isCustomPlaylist
+                          ? {
+                              playlistName: item.title,
+                              songs: item.songs || [],
+                              isCustomPlaylist: true,
+                              isOwner: Boolean(item.isOwner),
+                              playlistId: item.id,
+                              selectedFriendIds: item.selectedFriendIds || [],
+                              selectedFriendNames: item.selectedFriendNames || []
+                            }
                         : undefined
                     })}
                     onKeyDown={(e) => {
@@ -242,6 +457,16 @@ export default function MustangWrapped() {
                               ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
                             : item.isFacultyTop50Playlist
                               ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
+                            : item.isCustomPlaylist
+                              ? {
+                                  playlistName: item.title,
+                                  songs: item.songs || [],
+                                  isCustomPlaylist: true,
+                                  isOwner: Boolean(item.isOwner),
+                                  playlistId: item.id,
+                                  selectedFriendIds: item.selectedFriendIds || [],
+                                  selectedFriendNames: item.selectedFriendNames || []
+                                }
                             : undefined
                         });
                       }
@@ -255,10 +480,25 @@ export default function MustangWrapped() {
                       captionText={item.title}
                       showTooltip={false}
                       overlayContent={
-                        <>
+                        <div style={styles.coverOverlay}>
+                          {item.isCustomPlaylist && item.isOwner ? (
+                            <button
+                              type="button"
+                              aria-label={`Delete playlist ${item.title}`}
+                              title="Delete playlist"
+                              style={styles.deletePlaylistButton}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeletePlaylist(item.id);
+                              }}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            >
+                              Delete
+                            </button>
+                          ) : null}
                           <h2 style={styles.coverTitle}>{item.title}</h2>
                           <span className="tilted-card-cta">View Playlist</span>
-                        </>
+                        </div>
                       }
                     />
                   </div>
@@ -271,7 +511,7 @@ export default function MustangWrapped() {
         <div style={styles.addMoreButtonWrap}>
           <button
             style={styles.addMoreButton}
-            onClick={() => window.alert('More playlists coming soon.')}
+            onClick={handleAddPlaylist}
           >
             + Add More Playlists
           </button>
@@ -279,6 +519,91 @@ export default function MustangWrapped() {
 
       </div>
     </div>
+    {isNameModalOpen ? (
+      <div style={styles.modalBackdrop} onClick={() => setIsNameModalOpen(false)}>
+        <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+          <h3 style={styles.modalTitle}>Name New Playlist</h3>
+          <input
+            autoFocus
+            type="text"
+            style={styles.modalInput}
+            value={newPlaylistName}
+            maxLength={80}
+            onChange={(e) => setNewPlaylistName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCreatePlaylist();
+              }
+              if (e.key === 'Escape') {
+                e.preventDefault();
+                setIsNameModalOpen(false);
+              }
+            }}
+            placeholder="Enter playlist name"
+          />
+          <div style={{ marginTop: '14px' }}>
+            <p style={{ margin: '0 0 8px 0', fontSize: '13px', opacity: 0.9 }}>
+              Select friends for a shared Wrapped:
+            </p>
+            {isLoadingFriends ? (
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.85 }}>Loading friends...</p>
+            ) : friends.length === 0 ? (
+              <p style={{ margin: 0, fontSize: '13px', opacity: 0.85 }}>
+                No friends available yet. Follow people first, then create a shared Wrapped.
+              </p>
+            ) : (
+              <div style={{ maxHeight: '150px', overflowY: 'auto', paddingRight: '4px' }}>
+                {friends.map((friend) => {
+                  const checked = selectedFriendIds.includes(friend.id);
+                  return (
+                    <label
+                      key={friend.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '7px',
+                        fontSize: '14px'
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setSelectedFriendIds((prev) =>
+                            isChecked ? [...prev, friend.id] : prev.filter((id) => id !== friend.id)
+                          );
+                        }}
+                      />
+                      <span>{friend.display_name || 'Unknown'}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div style={styles.modalActions}>
+            <button
+              type="button"
+              style={styles.modalCancelButton}
+              onClick={() => setIsNameModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              style={styles.modalCreateButton}
+              onClick={handleCreatePlaylist}
+                disabled={!newPlaylistName.trim() || isCreatingPlaylist}
+            >
+                {isCreatingPlaylist ? 'Creating...' : 'Create'}
+            </button>
+          </div>
+        </div>
+      </div>
+    ) : null}
     </div>
   );
 }

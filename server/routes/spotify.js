@@ -737,4 +737,522 @@ router.get('/faculty-top-tracks', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/spotify/friends-top-tracks
+ * Returns top 50 tracks for current user + selected friends.
+ * Query: friend_ids=uuid1,uuid2,...
+ */
+router.get('/friends-top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const year = new Date().getFullYear();
+    const timeRange = req.query.time_range || 'medium_term';
+    const friendIdsParam = String(req.query.friend_ids || '').trim();
+    const requestedFriendIds = friendIdsParam
+      ? friendIdsParam.split(',').map((id) => id.trim()).filter(Boolean)
+      : [];
+
+    if (requestedFriendIds.length === 0) {
+      return res.status(400).json({ error: 'Select at least one friend' });
+    }
+
+    const me = user.id;
+    const { data: followingRows, error: followingErr } = await supabaseAdmin
+      .from('followers')
+      .select('following_id')
+      .eq('follower_id', me);
+    if (followingErr) {
+      return res.status(500).json({ error: 'Failed to fetch following users' });
+    }
+
+    const myFollowingIdSet = new Set((followingRows || []).map((r) => r.following_id));
+    const allowedFriendIds = requestedFriendIds.filter((id) => myFollowingIdSet.has(id));
+    if (allowedFriendIds.length === 0) {
+      return res.status(400).json({ error: 'No valid followed users selected' });
+    }
+
+    const participantUserIds = [me, ...allowedFriendIds];
+
+    const { data: accounts, error: accountsErr } = await supabaseAdmin
+      .from('spotify_accounts')
+      .select('id, user_id')
+      .in('user_id', participantUserIds);
+    if (accountsErr) {
+      return res.status(500).json({ error: 'Failed to fetch Spotify accounts' });
+    }
+
+    const accountIds = (accounts || []).map((a) => a.id);
+    if (accountIds.length === 0) {
+      return res.json({ tracks: [], participants: participantUserIds });
+    }
+
+    const { data: snapshots, error: snapshotErr } = await supabaseAdmin
+      .from('wrapped_snapshot')
+      .select('id')
+      .in('spotify_acc_id', accountIds)
+      .eq('year', year)
+      .eq('time_range', timeRange);
+    if (snapshotErr) {
+      return res.status(500).json({ error: 'Failed to fetch snapshot data' });
+    }
+
+    const snapshotIds = (snapshots || []).map((s) => s.id);
+    if (snapshotIds.length === 0) {
+      return res.json({ tracks: [], participants: participantUserIds });
+    }
+    const snapshotIdSet = new Set(snapshotIds);
+
+    const { data: items, error: itemsErr } = await supabaseAdmin
+      .from('wrapped_items')
+      .select('spotify_id, name, artists, image_url, snapshot_id, rank')
+      .eq('item_type', 'track')
+      .in('snapshot_id', snapshotIds);
+    if (itemsErr) {
+      return res.status(500).json({ error: 'Failed to fetch friend tracks' });
+    }
+
+    const totals = new Map();
+    for (const item of items || []) {
+      const id = item.spotify_id;
+      const snapshotId = item.snapshot_id;
+      if (!snapshotIdSet.has(snapshotId) || !id) continue;
+
+      if (!totals.has(id)) {
+        totals.set(id, {
+          spotify_id: id,
+          name: item.name,
+          artists: item.artists || '',
+          image_url: item.image_url,
+          _snapshots: new Set(),
+          rank_sum: 0,
+          rank_count: 0
+        });
+      }
+
+      const row = totals.get(id);
+      if ((!row.artists || row.artists.trim().length === 0) && item.artists) {
+        row.artists = item.artists;
+      }
+      row._snapshots.add(snapshotId);
+      if (typeof item.rank === 'number') {
+        row.rank_sum += item.rank;
+        row.rank_count += 1;
+      }
+    }
+
+    const top50 = Array.from(totals.values())
+      .map((row) => ({
+        spotify_id: row.spotify_id,
+        name: row.name,
+        artists: row.artists,
+        image_url: row.image_url,
+        appearance_count: row._snapshots.size,
+        avg_rank: row.rank_count > 0 ? row.rank_sum / row.rank_count : 999
+      }))
+      .sort((a, b) => {
+        if (b.appearance_count !== a.appearance_count) {
+          return b.appearance_count - a.appearance_count;
+        }
+        return a.avg_rank - b.avg_rank;
+      })
+      .slice(0, 50);
+
+    res.json({
+      tracks: top50,
+      participants: participantUserIds
+    });
+  } catch (err) {
+    console.error('[friends-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
+async function computeTopTracksForParticipants(participantUserIds, timeRange = 'medium_term') {
+  const year = new Date().getFullYear();
+  const { data: accounts, error: accountsErr } = await supabaseAdmin
+    .from('spotify_accounts')
+    .select('id, user_id')
+    .in('user_id', participantUserIds);
+  if (accountsErr) {
+    throw new Error('Failed to fetch Spotify accounts');
+  }
+
+  const accountIds = (accounts || []).map((a) => a.id);
+  if (accountIds.length === 0) return [];
+
+  const { data: snapshots, error: snapshotErr } = await supabaseAdmin
+    .from('wrapped_snapshot')
+    .select('id')
+    .in('spotify_acc_id', accountIds)
+    .eq('year', year)
+    .eq('time_range', timeRange);
+  if (snapshotErr) {
+    throw new Error('Failed to fetch snapshot data');
+  }
+
+  const snapshotIds = (snapshots || []).map((s) => s.id);
+  if (snapshotIds.length === 0) return [];
+  const snapshotIdSet = new Set(snapshotIds);
+
+  const { data: items, error: itemsErr } = await supabaseAdmin
+    .from('wrapped_items')
+    .select('spotify_id, name, artists, image_url, snapshot_id, rank')
+    .eq('item_type', 'track')
+    .in('snapshot_id', snapshotIds);
+  if (itemsErr) {
+    throw new Error('Failed to fetch track data');
+  }
+
+  const totals = new Map();
+  for (const item of items || []) {
+    const id = item.spotify_id;
+    const snapshotId = item.snapshot_id;
+    if (!snapshotIdSet.has(snapshotId) || !id) continue;
+
+    if (!totals.has(id)) {
+      totals.set(id, {
+        spotify_id: id,
+        name: item.name,
+        artists: item.artists || '',
+        image_url: item.image_url,
+        _snapshots: new Set(),
+        rank_sum: 0,
+        rank_count: 0
+      });
+    }
+
+    const row = totals.get(id);
+    if ((!row.artists || row.artists.trim().length === 0) && item.artists) {
+      row.artists = item.artists;
+    }
+    row._snapshots.add(snapshotId);
+    if (typeof item.rank === 'number') {
+      row.rank_sum += item.rank;
+      row.rank_count += 1;
+    }
+  }
+
+  return Array.from(totals.values())
+    .map((row) => ({
+      spotify_id: row.spotify_id,
+      name: row.name,
+      artists: row.artists,
+      image_url: row.image_url,
+      appearance_count: row._snapshots.size,
+      avg_rank: row.rank_count > 0 ? row.rank_sum / row.rank_count : 999
+    }))
+    .sort((a, b) => {
+      if (b.appearance_count !== a.appearance_count) {
+        return b.appearance_count - a.appearance_count;
+      }
+      return a.avg_rank - b.avg_rank;
+    })
+    .slice(0, 50);
+}
+
+router.get('/shared-playlists', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const me = user.id;
+    const { data: memberRows, error: memberRowsErr } = await supabaseAdmin
+      .from('shared_wrapped_playlist_members')
+      .select('playlist_id')
+      .eq('user_id', me);
+    if (memberRowsErr && memberRowsErr.code === 'PGRST205') {
+      return res.json({ playlists: [] });
+    }
+    if (memberRowsErr) {
+      return res.status(500).json({ error: 'Failed to fetch playlist access' });
+    }
+
+    const { data: ownedRows, error: ownedRowsErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .select('id')
+      .eq('owner_user_id', me);
+    if (ownedRowsErr && ownedRowsErr.code === 'PGRST205') {
+      return res.json({ playlists: [] });
+    }
+    if (ownedRowsErr) {
+      return res.status(500).json({ error: 'Failed to fetch owned playlists' });
+    }
+
+    const playlistIdSet = new Set([
+      ...(memberRows || []).map((r) => r.playlist_id),
+      ...(ownedRows || []).map((r) => r.id)
+    ]);
+    const playlistIds = Array.from(playlistIdSet).filter(Boolean);
+    if (playlistIds.length === 0) return res.json({ playlists: [] });
+
+    const { data: playlists, error: playlistsErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .select('id, name, owner_user_id, created_at')
+      .in('id', playlistIds)
+      .order('created_at', { ascending: false });
+    if (playlistsErr) {
+      return res.status(500).json({ error: 'Failed to fetch playlists' });
+    }
+
+    const { data: tracks, error: tracksErr } = await supabaseAdmin
+      .from('shared_wrapped_playlist_tracks')
+      .select('playlist_id, position, spotify_id, name, artists, image_url')
+      .in('playlist_id', playlistIds)
+      .order('position', { ascending: true });
+    if (tracksErr) {
+      return res.status(500).json({ error: 'Failed to fetch playlist tracks' });
+    }
+
+    const { data: members, error: membersErr } = await supabaseAdmin
+      .from('shared_wrapped_playlist_members')
+      .select('playlist_id, user_id')
+      .in('playlist_id', playlistIds);
+    if (membersErr) {
+      return res.status(500).json({ error: 'Failed to fetch playlist members' });
+    }
+
+    const memberUserIds = Array.from(new Set((members || []).map((m) => m.user_id)));
+    const { data: memberUsers } = memberUserIds.length
+      ? await supabaseAdmin
+        .from('users')
+        .select('id, display_name')
+        .in('id', memberUserIds)
+      : { data: [] };
+    const nameByUserId = new Map((memberUsers || []).map((u) => [u.id, u.display_name || 'Unknown']));
+
+    const tracksByPlaylist = new Map();
+    (tracks || []).forEach((track) => {
+      if (!tracksByPlaylist.has(track.playlist_id)) tracksByPlaylist.set(track.playlist_id, []);
+      tracksByPlaylist.get(track.playlist_id).push({
+        id: track.spotify_id,
+        spotifyId: track.spotify_id,
+        title: track.name,
+        album: track.artists || 'Unknown artist',
+        imageUrl: track.image_url
+      });
+    });
+
+    const membersByPlaylist = new Map();
+    (members || []).forEach((member) => {
+      if (!membersByPlaylist.has(member.playlist_id)) membersByPlaylist.set(member.playlist_id, []);
+      membersByPlaylist.get(member.playlist_id).push(member.user_id);
+    });
+
+    const result = (playlists || []).map((playlist) => {
+      const memberIds = membersByPlaylist.get(playlist.id) || [];
+      return {
+        id: playlist.id,
+        title: playlist.name,
+        ownerUserId: playlist.owner_user_id,
+        isOwner: playlist.owner_user_id === me,
+        songs: tracksByPlaylist.get(playlist.id) || [],
+        selectedFriendIds: memberIds.filter((id) => id !== playlist.owner_user_id),
+        selectedFriendNames: memberIds
+          .filter((id) => id !== playlist.owner_user_id)
+          .map((id) => nameByUserId.get(id) || 'Unknown')
+      };
+    });
+
+    return res.json({ playlists: result });
+  } catch (err) {
+    console.error('[shared-playlists] Error:', err.message);
+    next(err);
+  }
+});
+
+router.post('/shared-playlists', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const me = user.id;
+    const name = String(req.body?.name || '').trim();
+    const friendIds = Array.isArray(req.body?.friend_ids)
+      ? req.body.friend_ids.map((id) => String(id).trim()).filter(Boolean)
+      : [];
+    if (!name) return res.status(400).json({ error: 'Playlist name is required' });
+
+    const { data: followingRows, error: followingErr } = await supabaseAdmin
+      .from('followers')
+      .select('following_id')
+      .eq('follower_id', me);
+    if (followingErr) {
+      return res.status(500).json({ error: 'Failed to fetch following users' });
+    }
+    const allowedFollowingSet = new Set((followingRows || []).map((r) => r.following_id));
+    const allowedFriendIds = friendIds.filter((id) => allowedFollowingSet.has(id));
+    const participantUserIds = [me, ...allowedFriendIds];
+
+    const top50 = await computeTopTracksForParticipants(participantUserIds, 'medium_term');
+    const trackRows = top50.map((track, index) => ({
+      position: index + 1,
+      spotify_id: track.spotify_id,
+      name: track.name,
+      artists: track.artists || '',
+      image_url: track.image_url
+    }));
+
+    const { data: playlist, error: playlistErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .insert({ owner_user_id: me, name })
+      .select('id, name, owner_user_id, created_at')
+      .single();
+    if (playlistErr) {
+      return res.status(500).json({ error: 'Failed to create playlist' });
+    }
+
+    const memberRows = participantUserIds.map((userId) => ({
+      playlist_id: playlist.id,
+      user_id: userId
+    }));
+    const { error: membersErr } = await supabaseAdmin
+      .from('shared_wrapped_playlist_members')
+      .insert(memberRows);
+    if (membersErr) {
+      return res.status(500).json({ error: 'Failed to save playlist members' });
+    }
+
+    if (trackRows.length > 0) {
+      const { error: tracksErr } = await supabaseAdmin
+        .from('shared_wrapped_playlist_tracks')
+        .insert(trackRows.map((row) => ({ ...row, playlist_id: playlist.id })));
+      if (tracksErr) {
+        return res.status(500).json({ error: 'Failed to save playlist tracks' });
+      }
+    }
+
+    const { data: selectedUsers } = allowedFriendIds.length
+      ? await supabaseAdmin.from('users').select('id, display_name').in('id', allowedFriendIds)
+      : { data: [] };
+    const selectedFriendNames = (selectedUsers || []).map((u) => u.display_name || 'Unknown');
+
+    return res.status(201).json({
+      playlist: {
+        id: playlist.id,
+        title: playlist.name,
+        ownerUserId: playlist.owner_user_id,
+        isOwner: true,
+        songs: trackRows.map((row) => ({
+          id: row.spotify_id,
+          spotifyId: row.spotify_id,
+          title: row.name,
+          album: row.artists || 'Unknown artist',
+          imageUrl: row.image_url
+        })),
+        selectedFriendIds: allowedFriendIds,
+        selectedFriendNames
+      }
+    });
+  } catch (err) {
+    console.error('[shared-playlists:create] Error:', err.message);
+    next(err);
+  }
+});
+
+router.patch('/shared-playlists/:id', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const playlistId = req.params.id;
+    const name = String(req.body?.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Playlist name is required' });
+
+    const { data: playlist, error: playlistErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .select('id, owner_user_id')
+      .eq('id', playlistId)
+      .single();
+    if (playlistErr || !playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+    if (playlist.owner_user_id !== user.id) {
+      return res.status(403).json({ error: 'Only the playlist owner can rename' });
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .update({ name, updated_at: new Date().toISOString() })
+      .eq('id', playlistId);
+    if (updateErr) {
+      return res.status(500).json({ error: 'Failed to rename playlist' });
+    }
+    return res.json({ success: true, name });
+  } catch (err) {
+    console.error('[shared-playlists:rename] Error:', err.message);
+    next(err);
+  }
+});
+
+router.delete('/shared-playlists/:id', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const playlistId = req.params.id;
+    const { data: playlist, error: playlistErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .select('id, owner_user_id')
+      .eq('id', playlistId)
+      .single();
+    if (playlistErr || !playlist) {
+      return res.status(404).json({ error: 'Playlist not found' });
+    }
+    if (playlist.owner_user_id !== user.id) {
+      return res.status(403).json({ error: 'Only the playlist owner can delete' });
+    }
+
+    await supabaseAdmin.from('shared_wrapped_playlist_tracks').delete().eq('playlist_id', playlistId);
+    await supabaseAdmin.from('shared_wrapped_playlist_members').delete().eq('playlist_id', playlistId);
+    const { error: deleteErr } = await supabaseAdmin
+      .from('shared_wrapped_playlists')
+      .delete()
+      .eq('id', playlistId);
+    if (deleteErr) {
+      return res.status(500).json({ error: 'Failed to delete playlist' });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[shared-playlists:delete] Error:', err.message);
+    next(err);
+  }
+});
+
 export default router;

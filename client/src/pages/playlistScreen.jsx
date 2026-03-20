@@ -17,6 +17,11 @@ export default function PlaylistView() {
   const location = useLocation();
   const [playlistName, setPlaylistName] = useState('Playlist Name');
   const [songs, setSongs] = useState(placeholderSongs);
+  const [isCustomPlaylist, setIsCustomPlaylist] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [playlistId, setPlaylistId] = useState(null);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
   const openSpotifyTrack = (spotifyId) => {
     if (!spotifyId) return;
@@ -24,9 +29,32 @@ export default function PlaylistView() {
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const handleRenamePlaylist = () => {
+    if (!isCustomPlaylist) return;
+    setRenameValue(playlistName);
+    setIsRenameModalOpen(true);
+  };
+
+  const handleConfirmRename = async () => {
+    if (!isCustomPlaylist || !isOwner || !playlistId) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    try {
+      await api.renameSharedPlaylist(playlistId, trimmed);
+      setPlaylistName(trimmed);
+      setIsRenameModalOpen(false);
+      setRenameValue('');
+    } catch (error) {
+      console.warn('Could not rename custom playlist:', error);
+    }
+  };
+
   useEffect(() => {
     if (location.state?.playlistName && location.state?.songs?.length) {
       setPlaylistName(location.state.playlistName);
+      setIsCustomPlaylist(Boolean(location.state.isCustomPlaylist));
+      setIsOwner(Boolean(location.state.isOwner));
+      setPlaylistId(location.state.playlistId || null);
       setSongs(location.state.songs.map((s, i) => ({
         id: s.id || i + 1,
         spotifyId: s.spotifyId || (typeof s.id === 'string' ? s.id : null),
@@ -40,6 +68,9 @@ export default function PlaylistView() {
       .then((data) => {
         if (data.tracks?.length) {
           setPlaylistName('Your Top 50 Songs');
+          setIsCustomPlaylist(false);
+          setIsOwner(false);
+          setPlaylistId(null);
           setSongs(data.tracks.map((t, i) => ({
             id: t.rank || i + 1,
             spotifyId: t.spotify_id || null,
@@ -67,12 +98,22 @@ export default function PlaylistView() {
             <div style={styles.titleSection}>
               <h1 style={styles.playlistTitle}>{playlistName}</h1>
             </div>
-            <button 
-              style={styles.backButton}
-              onClick={() => navigate('/wrapped')}
-            >
-              ← Back
-            </button>
+            <div style={styles.headerButtons}>
+              {isCustomPlaylist && isOwner ? (
+                <button
+                  style={styles.renameButton}
+                  onClick={handleRenamePlaylist}
+                >
+                  Rename
+                </button>
+              ) : null}
+              <button 
+                style={styles.backButton}
+                onClick={() => navigate('/wrapped')}
+              >
+                ← Back
+              </button>
+            </div>
           </div>
 
           {/* Song List */}
@@ -109,6 +150,49 @@ export default function PlaylistView() {
           </div>
         </div>
       </div>
+      {isRenameModalOpen ? (
+        <div style={styles.modalBackdrop} onClick={() => setIsRenameModalOpen(false)}>
+          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.modalTitle}>Rename Playlist</h3>
+            <input
+              autoFocus
+              type="text"
+              style={styles.modalInput}
+              value={renameValue}
+              maxLength={80}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleConfirmRename();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setIsRenameModalOpen(false);
+                }
+              }}
+              placeholder="Enter playlist name"
+            />
+            <div style={styles.modalActions}>
+              <button
+                type="button"
+                style={styles.modalCancelButton}
+                onClick={() => setIsRenameModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={styles.modalCreateButton}
+                onClick={handleConfirmRename}
+                disabled={!renameValue.trim()}
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -131,6 +215,11 @@ const styles = {
     alignItems: 'flex-start',
     marginBottom: '40px',
     gap: '20px'
+  },
+  headerButtons: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
   },
   titleSection: {
     flex: 1,
@@ -165,6 +254,82 @@ const styles = {
     color: '#581c87',
     cursor: 'pointer',
     transition: 'background-color 0.3s'
+  },
+  renameButton: {
+    backgroundColor: '#e9d5ff',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '9999px',
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#581c87',
+    cursor: 'pointer',
+    transition: 'background-color 0.3s'
+  },
+  modalBackdrop: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(7, 2, 19, 0.7)',
+    backdropFilter: 'blur(4px)',
+    zIndex: 60,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: '520px',
+    borderRadius: '18px',
+    border: '1px solid rgba(255, 255, 255, 0.24)',
+    background: `
+      radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.18) 0%, transparent 40%),
+      linear-gradient(145deg, rgba(168, 85, 247, 0.9) 0%, rgba(124, 58, 237, 0.88) 55%, rgba(67, 56, 202, 0.9) 100%)
+    `,
+    boxShadow: '0 20px 56px rgba(76, 29, 149, 0.52)',
+    padding: '26px 22px',
+    color: 'white'
+  },
+  modalTitle: {
+    margin: '0 0 10px 0',
+    fontSize: '20px',
+    fontFamily: "'Press Start 2P', cursive",
+    lineHeight: '1.45'
+  },
+  modalInput: {
+    width: '100%',
+    borderRadius: '12px',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    background: 'rgba(10, 6, 34, 0.45)',
+    color: 'white',
+    padding: '12px 14px',
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box'
+  },
+  modalActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '10px',
+    marginTop: '16px'
+  },
+  modalCancelButton: {
+    border: '1px solid rgba(255, 255, 255, 0.35)',
+    background: 'rgba(255, 255, 255, 0.08)',
+    color: 'white',
+    borderRadius: '9999px',
+    padding: '10px 18px',
+    fontWeight: 700,
+    cursor: 'pointer'
+  },
+  modalCreateButton: {
+    border: 'none',
+    background: '#e9d5ff',
+    color: '#581c87',
+    borderRadius: '9999px',
+    padding: '10px 18px',
+    fontWeight: 800,
+    cursor: 'pointer'
   },
   songList: {
     display: 'flex',
