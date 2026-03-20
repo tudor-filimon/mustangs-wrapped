@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import multiavatar from '@multiavatar/multiavatar';
+import { toPng } from 'html-to-image';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 import '../App.css';
 
 const clothingOptions = [
@@ -79,7 +82,6 @@ const multiavatarNameOptions = [
   'Saugeen Sheriff',
   'Mustang Mythic',
   'Western Legend',
-  // Faculty / program jokes
   'Health Sci Hero',
   'Comp Sci Gremlin',
   'Ivey Spreadsheet Samurai',
@@ -107,6 +109,10 @@ const multiavatarNameOptions = [
 ];
 
 function Avatar() {
+  const { updateUserInContext } = useAuth();
+  const avatarRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   const [avatarMode, setAvatarMode] = useState('multiavatar');
   const [multiavatarSeed, setMultiavatarSeed] = useState(
     multiavatarNameOptions[0]
@@ -155,33 +161,56 @@ function Avatar() {
     }
   }, []);
 
-  const handleSave = () => {
-    if (avatarMode === 'multiavatar') {
-      const svg = multiavatar(multiavatarSeed);
-      const payload = {
-        mode: 'multiavatar',
-        seed: multiavatarSeed,
-        svg,
-      };
-      window.localStorage.setItem('mustangsWrappedAvatar', JSON.stringify(payload));
-    } else {
-      const payload = {
-        mode: 'custom',
-        clothing,
-        clothingColor,
-        hairStyle,
-        hairColor,
-        expression,
-        skinTone,
-        bodyType,
-      };
-      window.localStorage.setItem('mustangsWrappedAvatar', JSON.stringify(payload));
-    }
+  const handleSave = async () => {
+    if (!avatarRef.current) return;
+    setIsSaving(true);
 
-    setShowSavedToast(true);
-    window.setTimeout(() => {
-      setShowSavedToast(false);
-    }, 1600);
+    try {
+      // 1. Keep the local storage config so the editor remembers their choices
+      if (avatarMode === 'multiavatar') {
+        const svg = multiavatar(multiavatarSeed);
+        const payload = {
+          mode: 'multiavatar',
+          seed: multiavatarSeed,
+          svg,
+        };
+        window.localStorage.setItem('mustangsWrappedAvatar', JSON.stringify(payload));
+      } else {
+        const payload = {
+          mode: 'custom',
+          clothing,
+          clothingColor,
+          hairStyle,
+          hairColor,
+          expression,
+          skinTone,
+          bodyType,
+        };
+        window.localStorage.setItem('mustangsWrappedAvatar', JSON.stringify(payload));
+      }
+
+      // 2. Take a high-res PNG screenshot of the DOM element
+      const dataUrl = await toPng(avatarRef.current, { 
+        cacheBust: true,
+        pixelRatio: 2 // Ensures it looks sharp on retina displays
+      });
+
+      // 3. Send the Base64 image to Supabase
+      const response = await api.updateProfile({ avatar_url: dataUrl });
+      
+      // 4. Update the global context so the Navbar and other pages change instantly!
+      updateUserInContext(response.user);
+
+      setShowSavedToast(true);
+      window.setTimeout(() => {
+        setShowSavedToast(false);
+      }, 1600);
+    } catch (err) {
+      console.error("Failed to save avatar", err);
+      alert("Failed to save avatar to database.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -229,7 +258,7 @@ function Avatar() {
             </div>
 
             {avatarMode === 'custom' ? (
-              <div className="avatar-character">
+              <div className="avatar-character" ref={avatarRef}>
                 <div
                   className={`avatar-head avatar-hair-${hairStyle}`}
                   style={{
@@ -263,7 +292,7 @@ function Avatar() {
                 </div>
               </div>
             ) : (
-              <div className="multiavatar-wrapper">
+              <div className="multiavatar-wrapper" ref={avatarRef}>
                 <div
                   className="multiavatar-preview"
                   dangerouslySetInnerHTML={{
@@ -442,8 +471,8 @@ function Avatar() {
             </>
           )}
 
-          <button className="primary-button" type="button" onClick={handleSave}>
-            Save Avatar
+          <button className="primary-button" type="button" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Avatar'}
           </button>
         </section>
       </main>
@@ -455,4 +484,3 @@ function Avatar() {
 }
 
 export default Avatar;
-

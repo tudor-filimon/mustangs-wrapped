@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@multiavatar/multiavatar": "^1.0.7",
+    "html-to-image": "^1.11.13",
     "motion": "^12.38.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

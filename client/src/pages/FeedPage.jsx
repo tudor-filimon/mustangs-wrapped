@@ -23,7 +23,13 @@ export default function FeedPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
+  // Feed & Network State
+  const [allPosts, setAllPosts] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+  const [followerList, setFollowerList] = useState([]);
+  const [feedFilter, setFeedFilter] = useState('me'); 
+  
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   const [showListModal, setShowListModal] = useState(false); 
@@ -41,15 +47,56 @@ export default function FeedPage() {
 
   const gridRef = useRef(null);
 
-  const isOwner = useMemo(() => {
-    if (!posts.length || !user?.id) return true;
-    return posts.every(p => p.user_id === user.id);
-  }, [posts, user]);
-
   const name = user?.display_name || user?.displayName || user?.email || 'Guest';
-  const avatar = user?.avatar_url || defaultAvatar;
+  const myAvatar = user?.avatar_url || defaultAvatar;
 
-  useEffect(() => { if (user?.id) fetchPosts(); }, [user]);
+  useEffect(() => { 
+    if (user?.id) loadFeedData(); 
+  }, [user]);
+
+  useEffect(() => {
+    let filtered = [];
+    const followingIds = followingList.map(u => u.id);
+    const followerIds = followerList.map(u => u.id);
+
+    if (feedFilter === 'me') {
+      filtered = allPosts.filter(p => p.user_id === user?.id);
+    } else if (feedFilter === 'following') {
+      filtered = allPosts.filter(p => p.user_id === user?.id || followingIds.includes(p.user_id));
+    } else if (feedFilter === 'followers') {
+      filtered = allPosts.filter(p => p.user_id === user?.id || followerIds.includes(p.user_id));
+    } else if (feedFilter === 'friends') {
+      filtered = allPosts.filter(p => p.user_id === user?.id || (followingIds.includes(p.user_id) && followerIds.includes(p.user_id)));
+    }
+    
+    const sorted = filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    setPosts(sorted);
+  }, [allPosts, feedFilter, followingList, followerList, user?.id]);
+
+  const clusters = useMemo(() => {
+    const result = [];
+    
+    const myPosts = posts.filter(p => p.user_id === user?.id);
+    result.push({ user_id: user?.id, username: name, avatar: myAvatar, posts: myPosts, isMe: true });
+
+    const others = {};
+    posts.forEach(post => {
+      if (post.user_id === user?.id) return;
+      if (!others[post.user_id]) {
+        const networkUser = [...followingList, ...followerList].find(u => u.id === post.user_id);
+        others[post.user_id] = {
+          user_id: post.user_id,
+          username: post.username,
+          avatar: networkUser?.avatar_url || defaultAvatar,
+          posts: [],
+          isMe: false
+        };
+      }
+      others[post.user_id].posts.push(post);
+    });
+    
+    return [...result, ...Object.values(others)];
+  }, [posts, user?.id, name, myAvatar, followingList, followerList]);
 
   useEffect(() => {
     let mounted = true;
@@ -61,13 +108,29 @@ export default function FeedPage() {
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
+  const loadFeedData = async () => {
+    try {
+      setLoading(true);
+      const [followingRes, followersRes, postsRes] = await Promise.all([
+        api.getFollowing(),
+        api.getFollowers(),
+        api.getFeedPosts()
+      ]);
+      setFollowingList(followingRes.following || []);
+      setFollowerList(followersRes.followers || []);
+      setAllPosts(postsRes.posts || []);
+    } catch (error) { 
+      console.error("Failed to load feed data", error);
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
   const fetchPosts = async () => {
     try {
       const data = await api.getFeedPosts();
-      const currentPosts = data.posts.filter(p => p.user_id === user.id); 
-      const sortedPosts = currentPosts.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      setPosts(sortedPosts);
-    } catch (error) { } finally { setLoading(false); }
+      setAllPosts(data.posts || []);
+    } catch (error) { }
   };
 
   const availableEras = useMemo(() => {
@@ -86,7 +149,7 @@ export default function FeedPage() {
   const handleSendToFeed = async () => {
     if (!nowPlaying || !nowPlaying.track_id) return;
 
-    const isAlreadyInFeed = posts.some(p => p.spotify_track_id === nowPlaying.track_id);
+    const isAlreadyInFeed = allPosts.some(p => p.spotify_track_id === nowPlaying.track_id && p.user_id === user?.id);
     if (isAlreadyInFeed) {
       setFeedStatus('Already in Feed!');
       setTimeout(() => setFeedStatus(''), 3000);
@@ -104,7 +167,8 @@ export default function FeedPage() {
         album_name: nowPlaying.album, 
         release_date: nowPlaying.release_date 
       });
-      setFeedStatus('Added!'); fetchPosts(); 
+      setFeedStatus('Added!'); 
+      fetchPosts(); 
       setTimeout(() => { setFeedStatus(''); setShowNowPlayingModal(false); }, 2000);
     } catch (error) { 
       if (error.message && error.message.includes('already in feed')) {
@@ -118,38 +182,57 @@ export default function FeedPage() {
 
   const handleRemovePost = async (postId) => {
     setDeleteLoading(true);
-    try { await api.deleteFeedPost(postId); setPosts(prev => prev.filter(p => p.id !== postId)); if (activeModal?.id === postId) setActiveModal(null); } catch (error) { } finally { setDeleteLoading(false); }
+    try { 
+      await api.deleteFeedPost(postId); 
+      setAllPosts(prev => prev.filter(p => p.id !== postId)); 
+      if (activeModal?.id === postId) setActiveModal(null); 
+    } catch (error) { } finally { setDeleteLoading(false); }
   };
 
-  const calculatePosition = (index) => {
-    let currentRing = 0; let indexInRing = index;
-    while (true) { const capacity = 5 + (currentRing * 5); if (indexInRing < capacity) break; indexInRing -= capacity; currentRing++; }
-    const radius = 260 + (currentRing * 220); const itemsInThisRing = 5 + (currentRing * 5); const angle = (indexInRing / itemsInThisRing) * 2 * Math.PI;
-    return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
-  };
-
-  const CANVAS_SIZE = 4000; 
-  const startX = (window.innerWidth / 2) - (CANVAS_SIZE / 2);
-  const startY = ((window.innerHeight - 80) / 2) - (CANVAS_SIZE / 2);
-  
-  const neededRings = useMemo(() => {
-    let required = 0;
-    let counted = 0;
-    let r = 0;
-    while (counted < posts.length) {
-      counted += 5 + (r * 5);
-      required = r + 1;
-      r++;
+  const getClusterPosition = (index) => {
+    if (index === 0) return { cx: 0, cy: 0 }; 
+    let currentRing = 1;
+    let indexInRing = index - 1;
+    while (true) {
+      const capacity = currentRing * 6; 
+      if (indexInRing < capacity) break;
+      indexInRing -= capacity;
+      currentRing++;
     }
-    return Math.max(1, required);
-  }, [posts.length]);
+    const radius = currentRing * 1500; 
+    const itemsInThisRing = currentRing * 6;
+    const angle = (indexInRing / itemsInThisRing) * 2 * Math.PI;
+    return { cx: Math.cos(angle) * radius, cy: Math.sin(angle) * radius };
+  };
 
-  const ringsArray = Array.from({ length: neededRings }, (_, i) => i);
+  const getPostPosition = (cx, cy, postIndex) => {
+    let currentRing = 0; let indexInRing = postIndex;
+    while (true) { 
+      const capacity = 5 + (currentRing * 5); 
+      if (indexInRing < capacity) break; 
+      indexInRing -= capacity; 
+      currentRing++; 
+    }
+    const radius = 260 + (currentRing * 220); 
+    const itemsInThisRing = 5 + (currentRing * 5); 
+    const angle = (indexInRing / itemsInThisRing) * 2 * Math.PI;
+    return { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+  };
+
+  const CANVAS_SIZE = 6000; 
+  const INITIAL_SCALE = 0.7;
+  const startX = (window.innerWidth - (CANVAS_SIZE * INITIAL_SCALE)) / 2;
+  const startY = (window.innerHeight - (CANVAS_SIZE * INITIAL_SCALE)) / 2;
+
+  const displayNetworkList = networkTab === 'following' ? followingList : followerList;
+  const filteredNetworkList = displayNetworkList.filter(u => 
+    u.display_name?.toLowerCase().includes(networkSearch.toLowerCase())
+  );
 
   return (
     <div className="home-container dark page-transition feed-page-container">
       <AnimatedBackground />
-      
+
       <div 
         ref={gridRef}
         className="infinite-grid-bg"
@@ -167,7 +250,7 @@ export default function FeedPage() {
 
         <div className="feed-header-right">
           <button className="network-btn" onClick={() => setShowNetworkModal(true)}>
-            <img src="\src\assets\images\friendsButtonIcon.svg" alt="Friends Icon" /> Friends
+            <img src="/src/assets/images/friendsButtonIcon.svg" alt="Friends Icon" /> Network
           </button>
 
           {nowPlaying?.playing && (
@@ -179,7 +262,13 @@ export default function FeedPage() {
         </div>
       </header>
 
-      {/* Network Modal */}
+      <div className="feed-filter-bar">
+        <button className={`network-tab feed-filter-tab ${feedFilter === 'me' ? 'active' : ''}`} onClick={() => setFeedFilter('me')}>Me Only</button>
+        <button className={`network-tab feed-filter-tab ${feedFilter === 'friends' ? 'active' : ''}`} onClick={() => setFeedFilter('friends')}>Mutuals</button>
+        <button className={`network-tab feed-filter-tab ${feedFilter === 'following' ? 'active' : ''}`} onClick={() => setFeedFilter('following')}>Following</button>
+        <button className={`network-tab feed-filter-tab ${feedFilter === 'followers' ? 'active' : ''}`} onClick={() => setFeedFilter('followers')}>Followers</button>
+      </div>
+
       {showNetworkModal && (
         <div className="modal-overlay" onClick={() => setShowNetworkModal(false)}>
           <div className="feed-list-modal" onClick={e => e.stopPropagation()}>
@@ -189,16 +278,16 @@ export default function FeedPage() {
               
               <div className="network-tabs-container">
                 <button
-                  className={`network-tab ${networkTab === 'followers' ? 'active' : ''}`}
-                  onClick={() => setNetworkTab('followers')}
-                >
-                  Followers
-                </button>
-                <button
                   className={`network-tab ${networkTab === 'following' ? 'active' : ''}`}
                   onClick={() => setNetworkTab('following')}
                 >
-                  Following
+                  Following ({followingList.length})
+                </button>
+                <button
+                  className={`network-tab ${networkTab === 'followers' ? 'active' : ''}`}
+                  onClick={() => setNetworkTab('followers')}
+                >
+                  Followers ({followerList.length})
                 </button>
               </div>
 
@@ -213,11 +302,20 @@ export default function FeedPage() {
               </div>
             </div>
 
-            <div className="list-modal-content network-modal-content">
-              <p className="empty-list-text network-empty-text">
-                Backend logic for {networkTab} coming soon... <br/><br/>
-                (This shell is ready for data)
-              </p>
+            <div className="list-modal-content network-modal-padded">
+              {filteredNetworkList.length === 0 ? (
+                <p className="empty-list-text network-empty-text">No users found.</p>
+              ) : (
+                filteredNetworkList.map(u => (
+                  <div key={u.id} className="network-friends-card" onClick={() => navigate(`/profile/${u.id}`)}>
+                    <img src={u.avatar_url || defaultAvatar} alt="" className="network-friends-avatar" />
+                    <div className="network-friends-info">
+                      <strong className="network-friends-name">{u.display_name || 'Unknown'}</strong>
+                    </div>
+                    <span className="network-friends-link">View profile →</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -248,9 +346,9 @@ export default function FeedPage() {
           <div className="feed-list-modal" onClick={e => e.stopPropagation()}>
             <button className="red-close-btn modal-corner-x" onClick={() => setShowListModal(false)}>✕</button>
             <div className="list-modal-header-combined">
-              <h2>{isOwner ? 'Browse Your Feed' : `Browse ${name}'s Feed`}</h2>
+              <h2>Your Feed Settings</h2>
               <div className="list-controls">
-                <input type="text" placeholder="Search..." className="list-search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <input type="text" placeholder="Search your songs..." className="list-search-input" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 <select className="list-filter-select" value={filterEra} onChange={(e) => setFilterEra(e.target.value)}>
                   <option value="all">All Eras</option>
                   {availableEras.map(era => ( <option key={era} value={era}>{era}</option> ))}
@@ -258,8 +356,8 @@ export default function FeedPage() {
               </div>
             </div>
             <div className="list-modal-content">
-              {filteredPosts.length === 0 ? ( <p className="empty-list-text">No matches.</p> ) : (
-                filteredPosts.map((post) => (
+              {clusters[0]?.posts.length === 0 ? ( <p className="empty-list-text">You have no posts. Click the spinning album art in the top right to add a song!</p> ) : (
+                clusters[0]?.posts.filter(p => p.song_name.toLowerCase().includes(searchTerm.toLowerCase())).map((post) => (
                   <div key={post.id} className="list-item-row">
                     <img src={post.album_image_url} alt="art" className="list-item-art" />
                     <div className="list-item-info"> 
@@ -267,7 +365,7 @@ export default function FeedPage() {
                       <span className="list-item-artist">{post.artist_name}</span> 
                       <span className="list-item-meta">{getEra(post.release_date)}</span> 
                     </div>
-                    {post.user_id === user?.id && <button className="list-remove-btn" onClick={() => handleRemovePost(post.id)} disabled={deleteLoading}>Remove</button>}
+                    <button className="list-remove-btn" onClick={() => handleRemovePost(post.id)} disabled={deleteLoading}>Remove</button>
                   </div>
                 ))
               )}
@@ -283,9 +381,10 @@ export default function FeedPage() {
             <img src={activeModal.album_image_url} alt={activeModal.song_name} className="feed-modal-image" draggable={false} />
             <h3 className="feed-modal-song">{activeModal.song_name}</h3>
             <p className="feed-modal-artist">{activeModal.artist_name}</p>
+            <p className="feed-modal-detail">Added by: {activeModal.username}</p>
             <p className="feed-modal-detail">Era: {getEra(activeModal.release_date)}</p>
             <div className="feed-modal-actions">
-              <button className="feed-spotify-btn" onClick={() => window.open('https://' + 'open.spotify.com' + '/track/' + activeModal.spotify_track_id, '_blank')}>Listen on Spotify</button>
+              <button className="feed-spotify-btn" onClick={() => window.open('https://open.spotify.com/track/' + activeModal.spotify_track_id, '_blank')}>Listen on Spotify</button>
               {activeModal.user_id === user?.id && <button className="feed-remove-btn" onClick={() => handleRemovePost(activeModal.id)} disabled={deleteLoading}>Remove Post</button>}
             </div>
           </div>
@@ -295,8 +394,8 @@ export default function FeedPage() {
       {!loading && (
         <div className="canvas-container canvas-wrapper">
           <TransformWrapper 
-            initialScale={1} 
-            minScale={0.1} 
+            initialScale={INITIAL_SCALE} 
+            minScale={0.05} 
             maxScale={2} 
             initialPositionX={startX} 
             initialPositionY={startY} 
@@ -312,21 +411,72 @@ export default function FeedPage() {
           >
             {({ zoomIn, zoomOut, resetTransform }) => (
               <>
-                <div className="canvas-controls"> <button className="control-btn" onClick={() => zoomIn()}>+</button> <button className="control-btn" onClick={() => zoomOut()}>-</button> <button className="control-btn" onClick={() => resetTransform()}><img src="src/assets/images/HomeViewFeedPage.svg" alt="Home"/></button> </div>
+                <div className="canvas-controls"> 
+                  <button className="control-btn" onClick={() => zoomIn()}>+</button> 
+                  <button className="control-btn" onClick={() => zoomOut()}>-</button> 
+                  <button className="control-btn" onClick={() => resetTransform()}><img src="/src/assets/images/HomeViewFeedPage.svg" alt="Home"/></button> 
+                </div>
+                
                 <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} contentStyle={{ width: `${CANVAS_SIZE}px`, height: `${CANVAS_SIZE}px` }}>
                   
                   <div className="feed-environment feed-environment-infinite">
-                    <div className="feed-center owner-clickable" onClick={() => setShowListModal(true)}> <img src={avatar} alt="User" className="feed-center-avatar" draggable={false} /> <div className="feed-center-label">{name}</div> </div>
                     
-                    {posts.map((post, index) => {
-                      const { x, y } = calculatePosition(index);
-                      return ( <div key={post.id} className="feed-orbit-node" style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }} onClick={() => setActiveModal(post)}> <img src={post.album_image_url} alt="album" className="feed-node-image" draggable={false} /> <div className="feed-node-label">{post.song_name}</div> </div> );
+                    {clusters.map((cluster, clusterIndex) => {
+                      const { cx, cy } = getClusterPosition(clusterIndex);
+                      
+                      let requiredRings = 0;
+                      let counted = 0; let r = 0;
+                      while(counted < cluster.posts.length) {
+                        counted += 5 + (r * 5);
+                        requiredRings = r + 1;
+                        r++;
+                      }
+                      const ringsArray = Array.from({ length: Math.max(1, requiredRings) }, (_, i) => i);
+
+                      return (
+                        <React.Fragment key={cluster.user_id}>
+                          <div 
+                            className={`feed-center ${cluster.isMe ? 'owner-clickable' : ''}`} 
+                            style={{ transform: `translate(calc(-50% + ${cx}px), calc(-50% + ${cy}px))` }}
+                            onClick={() => { if(cluster.isMe) setShowListModal(true) }}
+                          > 
+                            <img src={cluster.avatar} alt="User" className="feed-center-avatar" draggable={false} /> 
+                            <div className="feed-center-label">{cluster.username}</div> 
+                          </div>
+                          
+                          {ringsArray.map(ring => { 
+                            const radius = 260 + (ring * 220); 
+                            return (
+                              <div 
+                                key={`ring-${cluster.user_id}-${ring}`} 
+                                className="orbit-ring-line" 
+                                style={{ 
+                                  width: `${radius * 2}px`, 
+                                  height: `${radius * 2}px`,
+                                  transform: `translate(calc(-50% + ${cx}px), calc(-50% + ${cy}px))`
+                                }} 
+                              />
+                            ); 
+                          })}
+
+                          {cluster.posts.map((post, postIndex) => {
+                            const { x, y } = getPostPosition(cx, cy, postIndex);
+                            return ( 
+                              <div 
+                                key={post.id} 
+                                className="feed-orbit-node" 
+                                style={{ transform: `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))` }} 
+                                onClick={() => setActiveModal(post)}
+                              > 
+                                <img src={post.album_image_url} alt="album" className="feed-node-image" draggable={false} /> 
+                                <div className="feed-node-label">{post.song_name}</div> 
+                              </div> 
+                            );
+                          })}
+                        </React.Fragment>
+                      );
                     })}
-                    
-                    {ringsArray.map(ring => { 
-                      const radius = 260 + (ring * 220); 
-                      return <div key={ring} className="orbit-ring-line" style={{ width: `${radius * 2}px`, height: `${radius * 2}px` }} />; 
-                    })}
+
                   </div>
                 </TransformComponent>
               </>

@@ -282,12 +282,13 @@ router.put('/profile', async (req, res, next) => {
     }
 
     // 2. Extract data to update
-    const { faculty, classYear, major } = req.body; 
+    const { faculty, classYear, major, avatar_url } = req.body; 
 
     const updateData = {};
     if (faculty !== undefined) updateData.faculty = faculty;
     if (classYear !== undefined) updateData.class_year = classYear; 
     if (major !== undefined) updateData.major = major;
+    if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'No update data provided' });

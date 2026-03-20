@@ -33,12 +33,25 @@ export default function AnimatedBackground({ customItems = [] }) {
 }
 
 function BackgroundFloater({ icon }) {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  // Lazily initialize state. If they've already dispersed this session, 
+  // start them immediately at a random location instead of 0,0.
+  const [position, setPosition] = useState(() => {
+    const hasDispersed = sessionStorage.getItem('backgroundDispersed');
+    if (hasDispersed) {
+      return {
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight
+      };
+    }
+    return { x: 0, y: 0 };
+  });
 
   useEffect(() => {
-    const startX = Math.random() * window.innerWidth;
-    const startY = Math.random() * window.innerHeight;
-    setPosition({ x: startX, y: startY });
+    // Flag that the explosion has happened for this session
+    const hasDispersed = sessionStorage.getItem('backgroundDispersed');
+    if (!hasDispersed) {
+      sessionStorage.setItem('backgroundDispersed', 'true');
+    }
 
     const move = () => {
       const newX = Math.random() * (window.innerWidth - 50);
@@ -46,9 +59,11 @@ function BackgroundFloater({ icon }) {
       setPosition({ x: newX, y: newY });
     };
 
+    // FIX: Always trigger a move 100ms after the page loads so the CSS 
+    // transition kicks in instantly, instead of waiting 8 seconds!
     const initialTimer = setTimeout(move, 100);
     const interval = setInterval(move, 8000);
-
+    
     return () => {
       clearTimeout(initialTimer);
       clearInterval(interval);
