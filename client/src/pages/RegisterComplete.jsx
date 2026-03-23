@@ -27,56 +27,56 @@ export default function RegisterComplete() {
   
   const [registrationToken, setRegistrationToken] = useState('fake-token-for-styling');
 
-  useEffect(() => {
-    const token = searchParams.get('token');
-    const errorParam = searchParams.get('error');
+    useEffect(() => {
+       const token = searchParams.get('token');
+       const errorParam = searchParams.get('error');
 
 
-    if (errorParam) {
-      let errorMessage = 'Registration failed';
-      switch (errorParam) {
-        case 'spotify_already_linked': errorMessage = 'This Spotify account is already linked to another Western account'; break;
-        case 'spotify_auth_failed': errorMessage = 'Spotify authentication failed. Please try again.'; break;
-        case 'invalid_state':
-        case 'no_code': errorMessage = 'Invalid registration session. Please start over.'; break;
-        default: errorMessage = `Error: ${errorParam}`;
+      if (errorParam) {
+        let errorMessage = 'Registration failed';
+        switch (errorParam) {
+          case 'spotify_already_linked': errorMessage = 'This Spotify account is already linked to another Western account'; break;
+          case 'spotify_auth_failed': errorMessage = 'Spotify authentication failed. Please try again.'; break;
+          case 'invalid_state':
+          case 'no_code': errorMessage = 'Invalid registration session. Please start over.'; break;
+          default: errorMessage = `Error: ${errorParam}`;
+        }
+        setError(errorMessage);
+        return;
       }
-      setError(errorMessage);
-      return;
-    }
 
-    if (!token) {
-      setError('Missing registration token. Please start the registration process again.');
-      return;
-    }
+      if (!token) {
+        setError('Missing registration token. Please start the registration process again.');
+        return;
+      }
 
-    setRegistrationToken(token);
-    api.getTempToken(token).catch(() => setError('Invalid or expired registration token. Please start over.'));
+      setRegistrationToken(token);
+      api.getTempToken(token).catch(() => setError('Invalid or expired registration token. Please start over.'));
 
-  }, [searchParams]);
+      }, [searchParams]);
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => setProfilePic(e.target.result);
-      reader.readAsDataURL(file);
-    }
-  };
+    const handleFileUpload = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => setProfilePic(e.target.result);
+        reader.readAsDataURL(file);
+      }
+    };
 
-  const handleSubmit = async () => {
-    setError('');
+    const handleSubmit = async () => {
+      setError('');
 
-    if (!email || !password || !confirmPassword || !displayName || !classYear || !faculty || !major) {
-      setError('Please fill in all required fields');
-      return;
-    }
-    if (!email.toLowerCase().endsWith('@uwo.ca')) {
-      setError('Please use your Western University email (@uwo.ca)');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      if (!email || !password || !confirmPassword || !displayName || !classYear || !faculty || !major) {
+        setError('Please fill in all required fields');
+        return;
+      }
+      if (!email.toLowerCase().endsWith('@uwo.ca')) {
+        setError('Please use your Western University email (@uwo.ca)');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
       return;
     }
     if (password.length < 6) {
