@@ -77,6 +77,27 @@ export default function CampusMaps() {
   const buildingImages = {
     'Weldon Library': '/src/assets/images/weldon.jpg',
     'UCC': '/src/assets/images/ucc.jpg',
+    'Rec Centre': '/src/assets/images/rec-centre.jpg',
+    'Ivey Building': '/src/assets/images/ivey.jpg',
+    'Taylor Library': '/src/assets/images/taylor.jpg',
+    'Social Science Centre': '/src/assets/images/social-science.jpg',
+    'Alumni Hall': '/src/assets/images/alumni.jpg',
+    'Spencer Eng Building': '/src/assets/images/spencer.jpg',
+    'Entrepreneurship Building': '/src/assets/images/entrepreneurship.jpg',
+    'Natural Sciences Centre': '/src/assets/images/natural-sciences.jpg',
+    'Thompson': '/src/assets/images/thompson.jpg',
+    'Amit Chakma Engineering Building': '/src/assets/images/amit-chakma-engineering.jpg',
+    'Law Library': '/src/assets/images/law-library.jpg',
+    'Thames Hall': '/src/assets/images/thames-hall.jpg',
+    '3M Centre': '/src/assets/images/3m-centre.jpg',
+    'Sommerville House': '/src/assets/images/sommerville-house.jpg',
+    'Middlesex College': '/src/assets/images/middlesex-college.jpg',
+    'University College': '/src/assets/images/university-college.jpg',
+    'Arts and Humanities': '/src/assets/images/arts-and-humanities.jpg',
+    'Music Building': '/src/assets/images/music-building.jpg',
+    'Talbot College': '/src/assets/images/talbot-college.jpg',
+    'IGAB': '/src/assets/images/igab.jpg',
+    'International Graduate Affairs Building': '/src/assets/images/igab.jpg',
   };
 
   const handleBuildingClick = (buildingName) => {
