@@ -2114,3 +2114,43 @@ justify-content: center;
   color: #a78bfa;
   font-size: 14px;
 }
+
+.icon-location {
+  display: inline-block;
+  width: 1.2rem;     
+  height: 1.2rem;
+  vertical-align: middle;
+  margin-right: 8px; 
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  
+  /* Goes up one level to src, then into assets/images */
+  background-image: url('../assets/images/pin.svg'); 
+}
+
+.icon-headphone {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  vertical-align: middle;
+  margin-right: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  background-image: url('../assets/images/headphones.svg'); 
+}
+
+.icon-online {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  vertical-align: middle;
+  margin-right: 8px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+
+  background-image: url('../assets/images/online.svg'); 
+}

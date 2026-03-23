@@ -281,14 +281,15 @@ router.put('/profile', async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid or expired token' });
     }
 
-    // 2. Extract data to update
-    const { faculty, classYear, major, avatar_url } = req.body; 
+    // 2. Extract data to update (Added current_building)
+    const { faculty, classYear, major, avatar_url, current_building } = req.body; 
 
     const updateData = {};
     if (faculty !== undefined) updateData.faculty = faculty;
     if (classYear !== undefined) updateData.class_year = classYear; 
     if (major !== undefined) updateData.major = major;
     if (avatar_url !== undefined) updateData.avatar_url = avatar_url;
+    if (current_building !== undefined) updateData.current_building = current_building;
 
     if (Object.keys(updateData).length === 0) {
       return res.status(400).json({ error: 'No update data provided' });
@@ -299,7 +300,7 @@ router.put('/profile', async (req, res, next) => {
       .from('users')
       .update(updateData)
       .eq('id', user.id)
-      .select('display_name, class_year, faculty, major, avatar_url')
+      .select('display_name, class_year, faculty, major, avatar_url, current_building')
       .single();
 
     if (updateError) throw updateError;

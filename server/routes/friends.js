@@ -315,9 +315,10 @@ router.get('/activity', async (req, res, next) => {
     const friendIds = (rows || []).map(r => r.user1_id === me ? r.user2_id : r.user1_id);
     if (friendIds.length === 0) return res.json({ activity: [] });
 
+    // Modified to grab current_building for mapping logic!
     const { data: users } = await supabaseAdmin
       .from('users')
-      .select('id, display_name, avatar_url')
+      .select('id, display_name, avatar_url, current_building')
       .in('id', friendIds);
     const userMap = Object.fromEntries((users || []).map(u => [u.id, u]));
 
@@ -325,7 +326,7 @@ router.get('/activity', async (req, res, next) => {
     for (const friendId of friendIds) {
       const spotify = await getSpotifyActivityForUser(friendId);
       activity.push({
-        user: userMap[friendId] || { id: friendId, display_name: 'Unknown', avatar_url: null },
+        user: userMap[friendId] || { id: friendId, display_name: 'Unknown', avatar_url: null, current_building: null },
         ...spotify
       });
     }
