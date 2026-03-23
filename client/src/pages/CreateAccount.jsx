@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 import api from '../utils/api';
+import '../components/styles.css';
 
 export default function CreateAccount({ onBack }) {
   const [loading, setLoading] = useState(false);
@@ -14,7 +15,6 @@ export default function CreateAccount({ onBack }) {
 
     try {
       const data = await api.getSpotifyAuthUrl();
-      // Redirect to Spotify OAuth
       window.location.href = data.authUrl;
     } catch (err) {
       setError(err.message || 'Failed to connect to Spotify. Please try again.');
@@ -24,43 +24,23 @@ export default function CreateAccount({ onBack }) {
 
   return (
     <div style={styles.container}>
-      {/* Inserted the Reusable Background */}
       <AnimatedBackground />
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        
-        * {
-          font-family: 'Poppins', sans-serif;
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        
-        .pixel-font {
-          font-family: 'Press Start 2P', cursive;
-        }
-      `}</style>
-
-      {/* Back Button */}
       <button
-        onClick={onBack}
+        onClick={onBack || (() => navigate(-1))}
         style={styles.backButton}
-        onMouseEnter={(e) => e.target.style.backgroundColor = '#f3e8ff'}
-        onMouseLeave={(e) => e.target.style.backgroundColor = '#e9d5ff'}
+        onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+        onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
       >
         ← Back
       </button>
 
-      {/* Main Content */}
       <div style={styles.mainContent}>
-        {/* Right Side - Spotify Connect */}
-        <div style={styles.rightSide}>
-          <h1 className="pixel-font" style={styles.title}>Create Account</h1>
+        <div style={styles.card}>
+          <h1 style={styles.title}>Create Account</h1>
           
           <p style={styles.description}>
-            Connect your Spotify account to get started with Mustang Wrapped
+            Connect your Spotify account to sync your music profile with Mustang Wrapped.
           </p>
 
           {error && (
@@ -69,30 +49,30 @@ export default function CreateAccount({ onBack }) {
             </div>
           )}
 
-          {/* Continue with Spotify Button */}
           <button
             onClick={handleContinueWithSpotify}
             disabled={loading}
             style={{
               ...styles.spotifyButton,
-              opacity: loading ? 0.6 : 1,
+              opacity: loading ? 0.7 : 1,
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
-            onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#1db954')}
-            onMouseLeave={(e) => !loading && (e.target.style.backgroundColor = '#1ed760')}
+            onMouseEnter={(e) => !loading && (e.currentTarget.style.transform = 'translateY(-2px)')}
+            onMouseLeave={(e) => !loading && (e.currentTarget.style.transform = 'translateY(0)')}
           >
             {loading ? (
               'Connecting...'
             ) : (
               <>
-                <span style={styles.spotifyIcon}>🎵</span>
+                {/* SVG Icon via CSS Class */}
+                <span className="icon-spotify-auth" />
                 Continue with Spotify
               </>
             )}
           </button>
 
           <p style={styles.note}>
-            You'll complete your registration after connecting Spotify
+            You'll complete your profile details on the next screen.
           </p>
         </div>
       </div>
@@ -103,25 +83,25 @@ export default function CreateAccount({ onBack }) {
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(to bottom right, #d8b4fe, #c084fc, #a855f7)',
-    padding: '40px 20px',
     position: 'relative',
-    overflow: 'auto',
+    overflow: 'hidden',
+    fontFamily: "'Inter', sans-serif"
   },
   backButton: {
     position: 'absolute',
     top: '30px',
-    right: '30px',
-    backgroundColor: '#e9d5ff',
-    color: '#6b21a8',
-    fontSize: '18px',
-    fontWeight: '600',
+    left: '40px', // Moved to left to match Homepage pill buttons
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    color: '#1f1041',
+    fontSize: '16px',
+    fontWeight: 'bold',
     padding: '12px 24px',
     borderRadius: '25px',
     border: 'none',
     cursor: 'pointer',
-    transition: 'all 0.2s',
-    zIndex: 20, // Ensured back button is clickable above the background
+    transition: 'all 0.2s ease',
+    zIndex: 20,
+    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
   },
   mainContent: {
     position: 'relative',
@@ -129,106 +109,63 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    maxWidth: '1200px',
-    margin: '0 auto',
-    paddingTop: '40px',
-    minHeight: 'calc(100vh - 80px)',
+    minHeight: '100vh',
+    padding: '20px',
   },
-  rightSide: {
-    maxWidth: '600px',
+  card: {
+    background: 'rgba(255, 255, 255, 0.15)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '24px',
+    padding: '50px 40px',
+    maxWidth: '500px',
     width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
     textAlign: 'center',
-    padding: '0 20px',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
   },
   title: {
-    fontSize: '48px',
+    fontSize: '2.5rem',
     color: 'white',
-    marginBottom: '20px',
-    textShadow: '3px 3px 0px rgba(0, 0, 0, 0.3)',
+    marginBottom: '15px',
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
   },
   description: {
-    fontSize: '18px',
-    color: 'white',
-    marginBottom: '30px',
-    textShadow: '2px 2px 0px rgba(0, 0, 0, 0.2)',
+    fontSize: '16px',
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: '35px',
+    lineHeight: '1.5'
   },
   errorBanner: {
-    backgroundColor: '#ef4444',
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
     color: 'white',
     padding: '12px 20px',
-    borderRadius: '10px',
+    borderRadius: '12px',
     marginBottom: '20px',
-    width: '100%',
     fontSize: '14px',
+    fontWeight: 'bold'
   },
   spotifyButton: {
     width: '100%',
-    maxWidth: '400px',
-    backgroundColor: '#1ed760',
-    color: 'white',
-    fontSize: '22px',
-    fontWeight: 'bold',
-    padding: '20px',
-    borderRadius: '25px',
+    backgroundColor: '#1db954',
+    color: '#1f1041',
+    fontSize: '18px',
+    fontWeight: '900',
+    padding: '16px',
+    borderRadius: '50px',
     border: 'none',
-    cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
-    transition: 'all 0.2s',
-    marginBottom: '15px',
-  },
-  spotifyIcon: {
-    fontSize: '28px',
+    transition: 'all 0.3s ease',
+    boxShadow: '0 10px 25px rgba(29, 185, 84, 0.4)',
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
   },
   note: {
-    fontSize: '14px',
-    color: 'white',
-    opacity: 0.9,
-    marginTop: '10px',
-  },
-  inputGroup: {
-    marginBottom: '25px',
-  },
-  label: {
-    display: 'block',
-    color: 'white',
-    fontSize: '18px',
-    marginBottom: '10px',
-    textShadow: '2px 2px 0px rgba(0, 0, 0, 0.2)',
-  },
-  input: {
-    width: '100%',
-    padding: '16px 20px',
-    borderRadius: '12px',
-    fontSize: '16px',
-    border: 'none',
-    outline: 'none',
-    color: '#1f2937',
-  },
-  hint: {
-    color: 'white',
     fontSize: '13px',
-    marginTop: '8px',
-    lineHeight: '1.6',
-  },
-  createButton: {
-    width: '100%',
-    maxWidth: '250px',
-    backgroundColor: '#9333ea',
-    color: 'white',
-    fontSize: '20px',
-    fontWeight: 'bold',
-    padding: '16px',
-    borderRadius: '25px',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.2s',
+    color: 'rgba(255,255,255,0.7)',
     marginTop: '20px',
-    float: 'right',
   },
 };

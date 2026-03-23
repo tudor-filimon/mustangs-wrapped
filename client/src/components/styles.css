@@ -2154,3 +2154,16 @@ justify-content: center;
 
   background-image: url('../assets/images/online.svg'); 
 }
+
+/* Auth Redesign */
+.icon-spotify-auth {
+  display: inline-block;
+  width: 24px;     
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 12px; 
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('../assets/images/Spotify Logo.png'); 
+}
