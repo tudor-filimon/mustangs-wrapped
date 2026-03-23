@@ -131,28 +131,39 @@ export default function CampusMaps() {
 
         if (friendsData && friendsData.activity) {
           const activeFriends = friendsData.activity
-            .filter(item => item.playing && item.user.current_building) 
+            // REMOVED item.playing restriction so paused friends still show up!
+            .filter(item => item.user.current_building) 
             .map(item => {
+              const isPlaying = item.playing;
+              // Fallback to their recent track if they paused Spotify
+              const trackData = isPlaying ? item : (item.recentTrack || {});
+
               return {
                 id: item.user.id,
                 username: item.user.display_name || 'Unknown',
                 building: item.user.current_building, 
-                song_name: item.song,
-                artist_name: item.artists,
-                album_image_url: item.image || 'https://via.placeholder.com/60'
+                song_name: trackData.song || 'Paused',
+                artist_name: trackData.artists || 'Nothing playing',
+                album_image_url: trackData.image || 'https://via.placeholder.com/60',
+                isPlaying: isPlaying
               };
             });
           activeUsers = [...activeFriends];
         }
 
-        if (myData && myData.playing && user && myActualBuilding) {
+        // Add yourself to the map as long as you've checked in somewhere
+        if (user && myActualBuilding) {
+          const isPlaying = myData && myData.playing;
+          const trackData = isPlaying ? myData : (myData?.recentTrack || {});
+
           activeUsers.push({
             id: user.id,
-            username: user.display_name,
+            username: user.display_name || 'You',
             building: myActualBuilding,
-            song_name: myData.song,
-            artist_name: myData.artists,
-            album_image_url: myData.image || 'https://via.placeholder.com/60'
+            song_name: trackData.song || 'Paused',
+            artist_name: trackData.artists || 'Nothing playing',
+            album_image_url: trackData.image || 'https://via.placeholder.com/60',
+            isPlaying: isPlaying
           });
         }
 
@@ -366,7 +377,7 @@ export default function CampusMaps() {
                   <h1 style={{ fontSize: '2.5rem', margin: '0 0 0.5rem 0', textTransform: 'uppercase' }}>{activeBuilding}</h1>
                   <p style={{ color: '#1db954', fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ display: 'inline-block', width: '10px', height: '10px', background: '#1db954', borderRadius: '50%', boxShadow: '0 0 10px #1db954' }}></span>
-                    {activeListeners.length} Active Listeners
+                    {activeListeners.length} People Here
                   </p>
                 </div>
                 <button 
@@ -377,10 +388,10 @@ export default function CampusMaps() {
                 </button>
               </div>
               <div style={{ marginTop: '2rem', flex: 1, overflowY: 'auto' }}>
-                <h3 style={{ color: '#a78bfa', letterSpacing: '2px' }}>LIVE FREQUENCIES</h3>
+                <h3 style={{ color: '#a78bfa', letterSpacing: '2px' }}>PEOPLE & FREQUENCIES</h3>
                 {activeListeners.length > 0 ? (
                   activeListeners.map((listener) => (
-                    <div key={listener.id} style={{ padding: '1.2rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', marginTop: '1rem', borderLeft: '4px solid #1db954', display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <div key={listener.id} style={{ padding: '1.2rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', marginTop: '1rem', borderLeft: listener.isPlaying ? '4px solid #1db954' : '4px solid #4b5563', display: 'flex', gap: '15px', alignItems: 'center', opacity: listener.isPlaying ? 1 : 0.6 }}>
                       <img 
                         src={listener.album_image_url} 
                         alt="album art" 
@@ -391,12 +402,14 @@ export default function CampusMaps() {
                           <span className={listener.id === user?.id ? "icon-online" : "icon-headphone"} />
                           {listener.username}
                         </p>
-                        <p style={{ margin: '0.4rem 0 0 0', color: '#a78bfa', fontSize: '0.95rem' }}>"{listener.song_name}" - {listener.artist_name}</p>
+                        <p style={{ margin: '0.4rem 0 0 0', color: listener.isPlaying ? '#a78bfa' : '#9ca3af', fontSize: '0.95rem' }}>
+                          {listener.isPlaying ? `"${listener.song_name}" - ${listener.artist_name}` : 'Paused / Offline'}
+                        </p>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <p style={{ marginTop: '1.5rem', color: '#a78bfa', fontStyle: 'italic' }}>No one is currently listening here.</p>
+                  <p style={{ marginTop: '1.5rem', color: '#a78bfa', fontStyle: 'italic' }}>No one is currently here.</p>
                 )}
               </div>
             </div>

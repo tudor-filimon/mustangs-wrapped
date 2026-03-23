@@ -42,11 +42,9 @@ const expressionOptions = [
 
 const skinToneOptions = [
   { id: 'light', label: 'Light', value: '#f9e0d2' },
-  { id: 'asian', label: 'Asian', value: '#e8c4a8' },
   { id: 'tan', label: 'Tan', value: '#e0b898' },
   { id: 'medium', label: 'Medium', value: '#c27a4f' },
   { id: 'dark', label: 'Dark', value: '#8b5a3c' },
-  { id: 'ultra-dark', label: 'Ultra Dark', value: '#4a3228' },
 ];
 
 const bodyTypeOptions = [

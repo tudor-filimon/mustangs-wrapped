@@ -315,7 +315,7 @@ router.get('/activity', async (req, res, next) => {
     const friendIds = (rows || []).map(r => r.user1_id === me ? r.user2_id : r.user1_id);
     if (friendIds.length === 0) return res.json({ activity: [] });
 
-    // Modified to grab current_building for mapping logic!
+    // 🔥 THE FIX: ADDED current_building BACK TO THE SELECT QUERY! 🔥
     const { data: users } = await supabaseAdmin
       .from('users')
       .select('id, display_name, avatar_url, current_building')
