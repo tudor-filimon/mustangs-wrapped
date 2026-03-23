@@ -105,7 +105,6 @@ router.use(authenticate);
 
 /**
  * GET /api/friends/users/search?q=
- * Search users by display_name (ilike). Excludes current user.
  */
 router.get('/users/search', async (req, res, next) => {
   try {
@@ -128,7 +127,6 @@ router.get('/users/search', async (req, res, next) => {
 
 /**
  * POST /api/friends/requests
- * Send a friend request. Body: { receiver_id }
  */
 router.post('/requests', async (req, res, next) => {
   try {
@@ -176,7 +174,6 @@ router.post('/requests', async (req, res, next) => {
 
 /**
  * GET /api/friends/requests
- * List incoming (pending) and sent (pending) friend requests with user info.
  */
 router.get('/requests', async (req, res, next) => {
   try {
@@ -222,7 +219,6 @@ router.get('/requests', async (req, res, next) => {
 
 /**
  * POST /api/friends/requests/:id/accept
- * Accept a friend request (receiver only). Creates friendship with sorted ids.
  */
 router.post('/requests/:id/accept', async (req, res, next) => {
   try {
@@ -253,7 +249,6 @@ router.post('/requests/:id/accept', async (req, res, next) => {
 
 /**
  * POST /api/friends/requests/:id/decline
- * Decline a friend request (receiver only).
  */
 router.post('/requests/:id/decline', async (req, res, next) => {
   try {
@@ -276,7 +271,6 @@ router.post('/requests/:id/decline', async (req, res, next) => {
 
 /**
  * GET /api/friends
- * List current user's friends with id, display_name, avatar_url.
  */
 router.get('/', async (req, res, next) => {
   try {
@@ -303,19 +297,34 @@ router.get('/', async (req, res, next) => {
 
 /**
  * GET /api/friends/activity
- * Friends' Spotify activity: currently playing or recently played.
+ * 🔥 THE FIX: Now checks BOTH the Follows system AND the Legacy Friends system! 🔥
  */
 router.get('/activity', async (req, res, next) => {
   try {
     const me = req.user.id;
-    const { data: rows } = await supabaseAdmin
+    
+    // 1. Get legacy friends
+    const { data: friendRows } = await supabaseAdmin
       .from('friends')
       .select('user1_id, user2_id')
       .or(`user1_id.eq.${me},user2_id.eq.${me}`);
-    const friendIds = (rows || []).map(r => r.user1_id === me ? r.user2_id : r.user1_id);
+      
+    // 2. Get people you are FOLLOWING
+    const { data: followRows } = await supabaseAdmin
+      .from('followers')
+      .select('following_id')
+      .eq('follower_id', me);
+
+    // Combine them both!
+    const friendSet = new Set();
+    (friendRows || []).forEach(r => friendSet.add(r.user1_id === me ? r.user2_id : r.user1_id));
+    (followRows || []).forEach(r => friendSet.add(r.following_id));
+    
+    const friendIds = Array.from(friendSet);
+
     if (friendIds.length === 0) return res.json({ activity: [] });
 
-    // 🔥 THE FIX: ADDED current_building BACK TO THE SELECT QUERY! 🔥
+    // Ensure we fetch current_building from DB
     const { data: users } = await supabaseAdmin
       .from('users')
       .select('id, display_name, avatar_url, current_building')
@@ -338,7 +347,6 @@ router.get('/activity', async (req, res, next) => {
 
 /**
  * GET /api/friends/check/:userId
- * Relationship with user: areFriends, requestStatus (none | sent | received).
  */
 router.get('/check/:userId', async (req, res, next) => {
   try {
@@ -376,7 +384,6 @@ router.get('/check/:userId', async (req, res, next) => {
 
 /**
  * GET /api/friends/profile/:userId
- * Public profile for a user (display_name, avatar_url, faculty, class_year, major) + relationship.
  */
 router.get('/profile/:userId', async (req, res, next) => {
   try {
