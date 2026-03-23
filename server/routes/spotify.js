@@ -738,6 +738,118 @@ router.get('/faculty-top-tracks', async (req, res, next) => {
 });
 
 /**
+ * GET /api/spotify/year-top-tracks
+ * Top 50 aggregate for users with the same class year (graduation year).
+ */
+router.get('/year-top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { data: me, error: meErr } = await supabaseAdmin
+      .from('users')
+      .select('class_year')
+      .eq('id', user.id)
+      .single();
+    if (meErr || !me) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    const classYear = me.class_year;
+    if (classYear == null || classYear === undefined) {
+      return res.json({ tracks: [], cohort: null });
+    }
+
+    const timeRange = req.query.time_range || 'medium_term';
+
+    const { data: cohortUsers, error: cohortUsersErr } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('class_year', classYear);
+    if (cohortUsersErr) {
+      return res.status(500).json({ error: 'Failed to fetch cohort users' });
+    }
+
+    const cohortUserIds = (cohortUsers || []).map((u) => u.id);
+    if (cohortUserIds.length === 0) {
+      return res.json({ tracks: [], cohort: { field: 'class_year', value: classYear } });
+    }
+
+    const tracks = await computeTopTracksForParticipants(cohortUserIds, timeRange);
+    res.json({
+      tracks,
+      cohort: { field: 'class_year', value: classYear }
+    });
+  } catch (err) {
+    console.error('[year-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
+/**
+ * GET /api/spotify/faculty-school-top-tracks
+ * Top 50 aggregate for all users in the same faculty (school), regardless of major.
+ */
+router.get('/faculty-school-top-tracks', async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token' });
+    }
+    const token = authHeader.substring(7);
+    const { data: { user }, error: getUserErr } = await supabase.auth.getUser(token);
+    if (getUserErr || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { data: me, error: meErr } = await supabaseAdmin
+      .from('users')
+      .select('faculty')
+      .eq('id', user.id)
+      .single();
+    if (meErr || !me) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    if (!me.faculty || String(me.faculty).trim().length === 0) {
+      return res.json({ tracks: [], cohort: null });
+    }
+
+    const facultyValue = String(me.faculty).trim();
+    const timeRange = req.query.time_range || 'medium_term';
+
+    const { data: cohortUsers, error: cohortUsersErr } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('faculty', facultyValue);
+    if (cohortUsersErr) {
+      return res.status(500).json({ error: 'Failed to fetch cohort users' });
+    }
+
+    const cohortUserIds = (cohortUsers || []).map((u) => u.id);
+    if (cohortUserIds.length === 0) {
+      return res.json({ tracks: [], cohort: { field: 'faculty', value: facultyValue } });
+    }
+
+    const tracks = await computeTopTracksForParticipants(cohortUserIds, timeRange);
+    res.json({
+      tracks,
+      cohort: { field: 'faculty', value: facultyValue }
+    });
+  } catch (err) {
+    console.error('[faculty-school-top-tracks] Error:', err.message);
+    next(err);
+  }
+});
+
+/**
  * GET /api/spotify/friends-top-tracks
  * Returns top 50 tracks for current user + selected friends.
  * Query: friend_ids=uuid1,uuid2,...

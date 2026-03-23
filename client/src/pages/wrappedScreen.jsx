@@ -220,9 +220,13 @@ export default function MustangWrapped() {
   const { user } = useAuth();
   const [topTracks, setTopTracks] = useState([]);
   const [globalTopTracks, setGlobalTopTracks] = useState([]);
-  const [facultyTopTracks, setFacultyTopTracks] = useState([]);
+  const [yearTopTracks, setYearTopTracks] = useState([]);
+  const [facultySchoolTopTracks, setFacultySchoolTopTracks] = useState([]);
+  const [majorCohortTopTracks, setMajorCohortTopTracks] = useState([]);
   const [customPlaylists, setCustomPlaylists] = useState([]);
-  const [facultyPlaylistTitle, setFacultyPlaylistTitle] = useState('Faculty Top 50 Songs');
+  const [yearPlaylistTitle, setYearPlaylistTitle] = useState('Class Year Top 50 Songs');
+  const [facultySchoolPlaylistTitle, setFacultySchoolPlaylistTitle] = useState('Faculty Top 50 Songs');
+  const [majorPlaylistTitle, setMajorPlaylistTitle] = useState('Top 50 Songs');
   const [isNameModalOpen, setIsNameModalOpen] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [friends, setFriends] = useState([]);
@@ -256,17 +260,43 @@ export default function MustangWrapped() {
         console.warn('Could not load global tracks:', err.message);
       });
 
-    api.getFacultyTopTracks()
+    api.getYearTopTracks()
       .then((data) => {
-        console.log('Faculty top 50 tracks:', data.tracks);
-        if (data.tracks?.length) setFacultyTopTracks(data.tracks);
-        const cohortValue = data?.cohort?.value;
-        if (cohortValue && String(cohortValue).trim().length > 0) {
-          setFacultyPlaylistTitle(`${cohortValue} Top 50 Songs`);
+        console.log('Class year top 50 tracks:', data.tracks);
+        if (data.tracks?.length) setYearTopTracks(data.tracks);
+        const y = data?.cohort?.value;
+        if (y != null && String(y).trim().length > 0) {
+          setYearPlaylistTitle(`Class of ${y} Top 50 Songs`);
         }
       })
       .catch((err) => {
-        console.warn('Could not load faculty tracks:', err.message);
+        console.warn('Could not load class year tracks:', err.message);
+      });
+
+    api.getFacultySchoolTopTracks()
+      .then((data) => {
+        console.log('Faculty school top 50 tracks:', data.tracks);
+        if (data.tracks?.length) setFacultySchoolTopTracks(data.tracks);
+        const facultyName = data?.cohort?.value;
+        if (facultyName && String(facultyName).trim().length > 0) {
+          setFacultySchoolPlaylistTitle(`${facultyName} — Faculty Top 50 Songs`);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load faculty school tracks:', err.message);
+      });
+
+    api.getFacultyTopTracks()
+      .then((data) => {
+        console.log('Major cohort top 50 tracks:', data.tracks);
+        if (data.tracks?.length) setMajorCohortTopTracks(data.tracks);
+        const cohortValue = data?.cohort?.value;
+        if (cohortValue != null && String(cohortValue).trim().length > 0) {
+          setMajorPlaylistTitle(`${cohortValue} Top 50 Songs`);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load major cohort tracks:', err.message);
       });
   }, []);
 
@@ -286,7 +316,23 @@ export default function MustangWrapped() {
     imageUrl: t.image_url
   }));
 
-  const facultyTop50Songs = facultyTopTracks.slice(0, 50).map((t) => ({
+  const yearTop50Songs = yearTopTracks.slice(0, 50).map((t) => ({
+    id: t.spotify_id,
+    spotifyId: t.spotify_id,
+    title: t.name,
+    album: t.artists || 'Unknown artist',
+    imageUrl: t.image_url
+  }));
+
+  const facultySchoolTop50Songs = facultySchoolTopTracks.slice(0, 50).map((t) => ({
+    id: t.spotify_id,
+    spotifyId: t.spotify_id,
+    title: t.name,
+    album: t.artists || 'Unknown artist',
+    imageUrl: t.image_url
+  }));
+
+  const majorCohortTop50Songs = majorCohortTopTracks.slice(0, 50).map((t) => ({
     id: t.spotify_id,
     spotifyId: t.spotify_id,
     title: t.name,
@@ -302,7 +348,10 @@ export default function MustangWrapped() {
 
     api.getSharedPlaylists()
       .then((data) => {
-        setCustomPlaylists(Array.isArray(data?.playlists) ? data.playlists : []);
+        const playlists = Array.isArray(data?.playlists) ? data.playlists : [];
+        setCustomPlaylists(
+          playlists.filter((playlist) => String(playlist?.title || '').trim().toLowerCase() !== 'wrapped 1')
+        );
       })
       .catch((error) => {
         console.warn('Could not load shared playlists:', error?.message || error);
@@ -383,7 +432,9 @@ export default function MustangWrapped() {
   const wrappedItems = [
     { id: 1, title: 'Your Top 50 Songs', isTop50Playlist: true },
     { id: 2, title: 'Global Top 50 Songs', isGlobalTop50Playlist: true },
-    { id: 3, title: facultyPlaylistTitle, isFacultyTop50Playlist: true },
+    { id: 3, title: yearPlaylistTitle, isYearPlaylist: true },
+    { id: 4, title: facultySchoolPlaylistTitle, isFacultySchoolPlaylist: true },
+    { id: 5, title: majorPlaylistTitle, isMajorCohortPlaylist: true },
     ...customPlaylists.map((playlist) => ({
       id: playlist.id,
       title: playlist.title,
@@ -433,8 +484,12 @@ export default function MustangWrapped() {
                         ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
                         : item.isGlobalTop50Playlist
                           ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
-                        : item.isFacultyTop50Playlist
-                          ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
+                        : item.isYearPlaylist
+                          ? { playlistName: yearPlaylistTitle, songs: yearTop50Songs }
+                        : item.isFacultySchoolPlaylist
+                          ? { playlistName: facultySchoolPlaylistTitle, songs: facultySchoolTop50Songs }
+                        : item.isMajorCohortPlaylist
+                          ? { playlistName: majorPlaylistTitle, songs: majorCohortTop50Songs }
                         : item.isCustomPlaylist
                           ? {
                               playlistName: item.title,
@@ -455,8 +510,12 @@ export default function MustangWrapped() {
                             ? { playlistName: 'Your Top 50 Songs', songs: top50Songs }
                             : item.isGlobalTop50Playlist
                               ? { playlistName: 'Global Top 50 Songs', songs: globalTop50Songs }
-                            : item.isFacultyTop50Playlist
-                              ? { playlistName: facultyPlaylistTitle, songs: facultyTop50Songs }
+                            : item.isYearPlaylist
+                              ? { playlistName: yearPlaylistTitle, songs: yearTop50Songs }
+                            : item.isFacultySchoolPlaylist
+                              ? { playlistName: facultySchoolPlaylistTitle, songs: facultySchoolTop50Songs }
+                            : item.isMajorCohortPlaylist
+                              ? { playlistName: majorPlaylistTitle, songs: majorCohortTop50Songs }
                             : item.isCustomPlaylist
                               ? {
                                   playlistName: item.title,

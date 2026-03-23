@@ -101,6 +101,14 @@ class ApiClient {
     return this.request('/api/spotify/faculty-top-tracks');
   }
 
+  async getYearTopTracks() {
+    return this.request('/api/spotify/year-top-tracks');
+  }
+
+  async getFacultySchoolTopTracks() {
+    return this.request('/api/spotify/faculty-school-top-tracks');
+  }
+
   async getFriendsTopTracks(friendIds = []) {
     const ids = Array.isArray(friendIds)
       ? friendIds.map((id) => String(id).trim()).filter(Boolean)
